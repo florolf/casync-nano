@@ -1,0 +1,381 @@
+Command (m for help): p
+Disk /dev/mmcblk0: 3.66 GiB, 3909091328 bytes, 7634944 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x00000000
+
+Device         Boot   Start     End Sectors  Size Id Type
+/dev/mmcblk0p1         2048   34815   32768   16M  c W95 FAT32 (LBA)
+/dev/mmcblk0p2        34816 4229119 4194304    2G 83 Linux
+/dev/mmcblk0p3      4229120 5662719 1433600  700M 83 Linux
+/dev/mmcblk0p4      5662720 7096319 1433600  700M 83 Linux
+
+
+dev/mmcblk0p4 sequentialo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 / 
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 27.073751
+write.c:stamp:30 timestamp 'fsync done': 28.005862
+dev/mmcblk0p4 sequentialo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 33.091643
+write.c:stamp:30 timestamp 'fsync done': 35.026142
+dev/mmcblk0p4 sequentialo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 50.020931
+write.c:stamp:30 timestamp 'fsync done': 51.015391
+dev/mmcblk0p4 random    o 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:223 using random test pattern
+write.c:stamp:30 timestamp 'test done': 56.066545
+write.c:stamp:30 timestamp 'fsync done': 56.074312
+dev/mmcblk0p4 sequentialo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 50.016261
+write.c:stamp:30 timestamp 'fsync done': 51.015243
+
+[root@alarm iotest]# blkdiscard /dev/mmcblk0p3
+[root@alarm iotest]# blkdiscard /dev/mmcblk0p4
+dev/mmcblk0p4 sequentialo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 50.940718
+write.c:stamp:30 timestamp 'fsync done': 51.950824
+dev/mmcblk0p4 randomo 2 > /proc/sys/vm/drop_caches; ./a.out /dev/mmcblk0p3 /d
+write.c:main:223 using random test pattern
+write.c:stamp:30 timestamp 'test done': 55.981807
+write.c:stamp:30 timestamp 'fsync done': 56.978744
+
+3root@alarm iotest]# echo 2 > /proc/sys/vm/drop_caches;time md5sum /dev/mmcblk0p3
+
+7fe5ca2a051d6dbb9ef191fbee0af98c  /dev/mmcblk0p3
+
+real	0m27.480s
+user	0m15.720s
+4
+cd4b745ea8bf9bb60be7b0110c03aa36  /dev/mmcblk0p4caches;time md5sum /dev/mmcblk0p3
+
+real	0m27.483s
+user	0m16.220s
+sys	0m6.710s
+[root@alarm iotest]#
+
+
+[root@alarm iotest]# time ./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 sequential
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 50.004749
+write.c:stamp:30 timestamp 'fsync done': 51.917458
+
+real	0m51.620s
+user	0m0.040s
+sys	0m9.750s
+[root@alarm iotest]# time ./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 random    
+write.c:main:223 using random test pattern
+write.c:stamp:30 timestamp 'test done': 56.064408
+write.c:stamp:30 timestamp 'fsync done': 56.081733
+
+real	0m57.288s
+user	0m0.160s
+sys	0m12.460s
+
+
+[root@alarm iotest]# \time -v ./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 random
+write.c:main:223 using random test pattern
+write.c:stamp:30 timestamp 'test done': 55.076527
+write.c:stamp:30 timestamp 'fsync done': 56.079033
+	Command being timed: "./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 random"
+	User time (seconds): 0.11
+	System time (seconds): 12.60
+	Percent of CPU this job got: 22%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:57.23
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1600
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 149
+	Voluntary context switches: 6080
+	Involuntary context switches: 3570
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[root@alarm iotest]# \time -v ./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 sequential
+write.c:main:226 using sequential test pattern
+write.c:stamp:30 timestamp 'test done': 49.998067
+write.c:stamp:30 timestamp 'fsync done': 51.918788
+	Command being timed: "./a.out /dev/mmcblk0p3 /dev/mmcblk0p4 sequential"
+	User time (seconds): 0.04
+	System time (seconds): 9.60
+	Percent of CPU this job got: 18%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:51.61
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1596
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 148
+	Voluntary context switches: 4998
+	Involuntary context switches: 2615
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+
+
+[root@alarm mmc-utils]# ./mmc extcsd read /dev/mmcblk0
+=============================================
+  Extended CSD rev 1.7 (MMC 5.0)
+=============================================
+
+Card Supported Command sets [S_CMD_SET: 0x01]
+HPI Features [HPI_FEATURE: 0x01]: implementation based on CMD13
+Background operations support [BKOPS_SUPPORT: 0x01]
+Max Packet Read Cmd [MAX_PACKED_READS: 0x3c]
+Max Packet Write Cmd [MAX_PACKED_WRITES: 0x3c]
+Data TAG support [DATA_TAG_SUPPORT: 0x01]
+Data TAG Unit Size [TAG_UNIT_SIZE: 0x03]
+Tag Resources Size [TAG_RES_SIZE: 0x00]
+Context Management Capabilities [CONTEXT_CAPABILITIES: 0x05]
+Large Unit Size [LARGE_UNIT_SIZE_M1: 0x03]
+Extended partition attribute support [EXT_SUPPORT: 0x03]
+Generic CMD6 Timer [GENERIC_CMD6_TIME: 0x19]
+Power off notification [POWER_OFF_LONG_TIME: 0xff]
+Cache Size [CACHE_SIZE] is 1024 KiB
+Background operations status [BKOPS_STATUS: 0x00]
+1st Initialisation Time after programmed sector [INI_TIMEOUT_AP: 0x64]
+Power class for 52MHz, DDR at 3.6V [PWR_CL_DDR_52_360: 0x00]
+Power class for 52MHz, DDR at 1.95V [PWR_CL_DDR_52_195: 0x00]
+Power class for 200MHz at 3.6V [PWR_CL_200_360: 0x00]
+Power class for 200MHz, at 1.95V [PWR_CL_200_195: 0x00]
+Minimum Performance for 8bit at 52MHz in DDR mode:
+ [MIN_PERF_DDR_W_8_52: 0x00]
+ [MIN_PERF_DDR_R_8_52: 0x00]
+TRIM Multiplier [TRIM_MULT: 0x11]
+Secure Feature support [SEC_FEATURE_SUPPORT: 0x55]
+Boot Information [BOOT_INFO: 0x07]
+ Device supports alternative boot method
+ Device supports dual data rate during boot
+ Device supports high speed timing during boot
+Boot partition size [BOOT_SIZE_MULTI: 0x10]
+Access size [ACC_SIZE: 0x06]
+High-capacity erase unit size [HC_ERASE_GRP_SIZE: 0x01]
+ i.e. 512 KiB
+High-capacity erase timeout [ERASE_TIMEOUT_MULT: 0x11]
+Reliable write sector count [REL_WR_SEC_C: 0x01]
+High-capacity W protect group size [HC_WP_GRP_SIZE: 0x10]
+ i.e. 8192 KiB
+Sleep current (VCC) [S_C_VCC: 0x0a]
+Sleep current (VCCQ) [S_C_VCCQ: 0x0b]
+Sleep/awake timeout [S_A_TIMEOUT: 0x13]
+Sector Count [SEC_COUNT: 0x00748000]
+ Device is block-addressed
+Minimum Write Performance for 8bit:
+ [MIN_PERF_W_8_52: 0x08]
+ [MIN_PERF_R_8_52: 0x08]
+ [MIN_PERF_W_8_26_4_52: 0x08]
+ [MIN_PERF_R_8_26_4_52: 0x08]
+Minimum Write Performance for 4bit:
+ [MIN_PERF_W_4_26: 0x08]
+ [MIN_PERF_R_4_26: 0x08]
+Power classes registers:
+ [PWR_CL_26_360: 0x00]
+ [PWR_CL_52_360: 0x00]
+ [PWR_CL_26_195: 0x00]
+ [PWR_CL_52_195: 0x00]
+Partition switching timing [PARTITION_SWITCH_TIME: 0x03]
+Out-of-interrupt busy timing [OUT_OF_INTERRUPT_TIME: 0x04]
+I/O Driver Strength [DRIVER_STRENGTH: 0x1f]
+Card Type [CARD_TYPE: 0x57]
+ HS200 Single Data Rate eMMC @200MHz 1.8VI/O
+ HS Dual Data Rate eMMC @52MHz 1.8V or 3VI/O
+ HS eMMC @52MHz - at rated device voltage(s)
+ HS eMMC @26MHz - at rated device voltage(s)
+CSD structure version [CSD_STRUCTURE: 0x02]
+Command set [CMD_SET: 0x00]
+Command set revision [CMD_SET_REV: 0x00]
+Power class [POWER_CLASS: 0x00]
+High-speed interface timing [HS_TIMING: 0x02]
+Erased memory content [ERASED_MEM_CONT: 0x00]
+Boot configuration bytes [PARTITION_CONFIG: 0x00]
+ Not boot enable
+ No access to boot partition
+Boot config protection [BOOT_CONFIG_PROT: 0x00]
+Boot bus Conditions [BOOT_BUS_CONDITIONS: 0x00]
+High-density erase group definition [ERASE_GROUP_DEF: 0x01]
+Boot write protection status registers [BOOT_WP_STATUS]: 0x00
+Boot Area Write protection [BOOT_WP]: 0x00
+ Power ro locking: possible
+ Permanent ro locking: possible
+ ro lock status: not locked
+User area write protection register [USER_WP]: 0x00
+FW configuration [FW_CONFIG]: 0x00
+RPMB Size [RPMB_SIZE_MULT]: 0x04
+Write reliability setting register [WR_REL_SET]: 0x1f
+ user area: the device protects existing data if a power failure occurs during a write operation
+ partition 1: the device protects existing data if a power failure occurs during a write operation
+ partition 2: the device protects existing data if a power failure occurs during a write operation
+ partition 3: the device protects existing data if a power failure occurs during a write operation
+ partition 4: the device protects existing data if a power failure occurs during a write operation
+Write reliability parameter register [WR_REL_PARAM]: 0x04
+ Device supports the enhanced def. of reliable write
+Enable background operations handshake [BKOPS_EN]: 0x00
+H/W reset function [RST_N_FUNCTION]: 0x00
+HPI management [HPI_MGMT]: 0x01
+Partitioning Support [PARTITIONING_SUPPORT]: 0x07
+ Device support partitioning feature
+ Device can have enhanced tech.
+Max Enhanced Area Size [MAX_ENH_SIZE_MULT]: 0x0000e9
+ i.e. 1908736 KiB
+Partitions attribute [PARTITIONS_ATTRIBUTE]: 0x00
+Partitioning Setting [PARTITION_SETTING_COMPLETED]: 0x00
+ Device partition setting NOT complete
+General Purpose Partition Size
+ [GP_SIZE_MULT_4]: 0x000000
+ [GP_SIZE_MULT_3]: 0x000000
+ [GP_SIZE_MULT_2]: 0x000000
+ [GP_SIZE_MULT_1]: 0x000000
+Enhanced User Data Area Size [ENH_SIZE_MULT]: 0x000000
+ i.e. 0 KiB
+Enhanced User Data Start Address [ENH_START_ADDR]: 0x00000000
+ i.e. 0 bytes offset
+Bad Block Management mode [SEC_BAD_BLK_MGMNT]: 0x00
+Periodic Wake-up [PERIODIC_WAKEUP]: 0x00
+Program CID/CSD in DDR mode support [PROGRAM_CID_CSD_DDR_SUPPORT]: 0x01
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[127]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[126]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[125]]: 0x10
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[124]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[123]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[122]]: 0x04
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[121]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[120]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[119]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[118]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[117]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[116]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[115]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[114]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[113]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[112]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[111]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[110]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[109]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[108]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[107]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[106]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[105]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[104]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[103]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[102]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[101]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[100]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[99]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[98]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[97]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[96]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[95]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[94]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[93]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[92]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[91]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[90]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[89]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[88]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[87]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[86]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[85]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[84]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[83]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[82]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[81]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[80]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[79]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[78]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[77]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[76]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[75]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[74]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[73]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[72]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[71]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[70]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[69]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[68]]: 0x01
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[67]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[66]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[65]]: 0x00
+Vendor Specific Fields [VENDOR_SPECIFIC_FIELD[64]]: 0x00
+Native sector size [NATIVE_SECTOR_SIZE]: 0x00
+Sector size emulation [USE_NATIVE_SECTOR]: 0x00
+Sector size [DATA_SECTOR_SIZE]: 0x00
+1st initialization after disabling sector size emulation [INI_TIMEOUT_EMU]: 0x00
+Class 6 commands control [CLASS_6_CTRL]: 0x00
+Number of addressed group to be Released[DYNCAP_NEEDED]: 0x00
+Exception events control [EXCEPTION_EVENTS_CTRL]: 0x0000
+Exception events status[EXCEPTION_EVENTS_STATUS]: 0x0000
+Extended Partitions Attribute [EXT_PARTITIONS_ATTRIBUTE]: 0x0000
+Context configuration [CONTEXT_CONF[51]]: 0x00
+Context configuration [CONTEXT_CONF[50]]: 0x00
+Context configuration [CONTEXT_CONF[49]]: 0x00
+Context configuration [CONTEXT_CONF[48]]: 0x00
+Context configuration [CONTEXT_CONF[47]]: 0x00
+Context configuration [CONTEXT_CONF[46]]: 0x00
+Context configuration [CONTEXT_CONF[45]]: 0x00
+Context configuration [CONTEXT_CONF[44]]: 0x00
+Context configuration [CONTEXT_CONF[43]]: 0x00
+Context configuration [CONTEXT_CONF[42]]: 0x00
+Context configuration [CONTEXT_CONF[41]]: 0x00
+Context configuration [CONTEXT_CONF[40]]: 0x00
+Context configuration [CONTEXT_CONF[39]]: 0x00
+Context configuration [CONTEXT_CONF[38]]: 0x00
+Context configuration [CONTEXT_CONF[37]]: 0x00
+Packed command status [PACKED_COMMAND_STATUS]: 0x00
+Packed command failure index [PACKED_FAILURE_INDEX]: 0x00
+Power Off Notification [POWER_OFF_NOTIFICATION]: 0x01
+Control to turn the Cache ON/OFF [CACHE_CTRL]: 0x01
+eMMC Firmware Version: 
+eMMC Life Time Estimation A [EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A]: 0x01
+eMMC Life Time Estimation B [EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B]: 0x01
+eMMC Pre EOL information [EXT_CSD_PRE_EOL_INFO]: 0x01
+
+[root@alarm device]# cat date
+01/2018
+[root@alarm device]# cat preferred_erase_size 
+4194304
+[root@alarm device]# cat pre
+pre_eol_info          preferred_erase_size  
+[root@alarm device]# cat pre_eol_info 
+0x01
+[root@alarm device]# cat name
+IS004G
+[root@alarm device]# cat hwrev 
+0x0
+[root@alarm device]# cat life_time 
+0x01 0x01
+[root@alarm device]# cat manfid 
+0x00009d
+[root@alarm device]# cat rel_sectors 
+0x1
+[root@alarm device]# cat ffu_capable 
+1
+t@alarm device]# cat serial 
+0x23349011
+[root@alarm device]# cat rev
+0x7
+[root@alarm device]# cat prv  
+0x50
+[root@alarm device]# cat erase_size 
+524288
+
