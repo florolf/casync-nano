@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 
 	time_t now;
 
-	now = time(NULL);
+	now = time_monotonic();
 	time_t start = now;
 
 	const char *appname = basename(argv[0]);
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	now = time(NULL);
+	now = time_monotonic();
 	u_log(INFO, "init finished after %u seconds", (unsigned int)(now - start));
 	start = now;
 
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	now = time(NULL);
+	now = time_monotonic();
 	u_log(INFO, "synchronization finished after %u seconds", (unsigned int)(now - start));
 
 	store_free(store);

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 
 #include "log.h"
 
@@ -92,3 +93,4 @@ must_check int pwriteall(int fd, uint8_t *buf, size_t len, off_t offset);
 } while (0)
 
 int fd_size(int fd, off_t *size_out);
+time_t time_monotonic(void);

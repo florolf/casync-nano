@@ -114,3 +114,12 @@ int fd_size(int fd, off_t *size_out)
 
 	return 0;
 }
+
+time_t time_monotonic(void)
+{
+	struct timespec ts;
+
+	u_assert_se(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+
+	return ts.tv_sec;
+}
