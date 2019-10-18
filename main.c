@@ -23,11 +23,19 @@ static int index_fd;
 
 static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 {
-	uint8_t buf[256*1024];
-	ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
-	if (ret < 0 || len != (size_t)ret) {
-		u_log(ERR, "result size %zd does not match expected length %"PRIu32, ret, len);
-		return -1;
+	static bool have_last_id = false;
+	static uint8_t last_id[CHUNK_ID_LEN];
+	static uint8_t buf[256*1024];
+
+	if (!have_last_id || memcmp(last_id, id, CHUNK_ID_LEN) != 0) {
+		ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
+		if (ret < 0 || len != (size_t)ret) {
+			u_log(ERR, "result size %zd does not match expected length %"PRIu32, ret, len);
+			return -1;
+		}
+
+		memcpy(last_id, id, CHUNK_ID_LEN);
+		have_last_id = true;
 	}
 
 	if (target_write(target, buf, len, offset, id) < 0) {
