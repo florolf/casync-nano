@@ -61,7 +61,7 @@ static int load_index_header(int fd, struct chunker_params *params_out)
 	uint64_t flags;
 
 	flags = unp64le(&buf[0]);
-	if (flags != UINT64_C(0x9000000000000000)) {
+	if (flags & ~UINT64_C(0xd000000000000000)) {
 		u_log(ERR, "unsupported feature set: 0x%016"PRIx64, flags);
 		return -1;
 	}
