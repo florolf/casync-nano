@@ -28,8 +28,7 @@ static ssize_t store_chain_get_chunk(struct store *s, uint8_t *id, uint8_t *out,
 	struct store_chain *sc = (struct store_chain*) s;
 
 	char chunk_name[CHUNK_ID_STRLEN];
-	if (check_loglevel(U_LOG_DEBUG))
-		chunk_format_id(chunk_name, id);
+	chunk_format_id(chunk_name, id);
 
 	sc->queries++;
 
