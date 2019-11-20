@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 project(csn)
 
+option(BUILD_PATCHDD "build patchdd utility" OFF)
+
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 if(POLICY CMP0063)
   cmake_policy(SET CMP0063 NEW)
@@ -40,6 +42,16 @@ target_include_directories(csn PRIVATE ${ZSTD_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS}
 
 install(TARGETS csn RUNTIME DESTINATION bin)
 install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink csn \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/bin/casync)")
+
+if(BUILD_PATCHDD)
+	add_executable(patchdd
+	               log.c
+	               utils.c
+	               patchdd.c
+	)
+
+	install(TARGETS patchdd RUNTIME DESTINATION bin)
+endif()
 
 enable_testing()
 #add_subdirectory(test)
