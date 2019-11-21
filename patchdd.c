@@ -103,6 +103,11 @@ int main(int argc, char **argv)
 			progress((100ull * offset) / src_size);
 	}
 
+	if (fsync(dst) < 0) {
+		u_log_errno("fsync on target failed");
+		return EXIT_FAILURE;
+	}
+
 	now = time_monotonic();
 	printf("synchronization finished after %u seconds\n", (unsigned int)(now - start));
 	printf("skipped a total of %llu bytes (%.2f%% of the input)\n",
