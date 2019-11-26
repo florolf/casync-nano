@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <libgen.h>
@@ -14,12 +16,15 @@
 #include "store-local.h"
 #include "store-http.h"
 #include "target.h"
+#include "ui.h"
 
 static struct store *store;
 static struct target *target;
 static struct chunker_params chunker_params;
 static size_t n_entries;
 static int index_fd;
+
+static bool interactive = false;
 
 static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 {
@@ -41,6 +46,15 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 	if (target_write(target, buf, len, offset, id) < 0) {
 		u_log(ERR, "failed to store chunk to target");
 		return -1;
+	}
+
+	// only show progress bar when running interactively and not spamming
+	// debug information anyway
+	if (interactive && !check_loglevel(U_LOG_DEBUG)) {
+		static uint32_t handled_entries = 0;
+		static progess_status_t progress_status = PROGRESS_STATUS_INIT;
+
+		show_progress(100 * ++handled_entries / n_entries, &progress_status);
 	}
 
 	return 0;
@@ -226,6 +240,9 @@ int main(int argc, char **argv)
 	u_log_init();
 
 	int ret;
+
+	if (isatty(STDOUT_FILENO))
+		interactive = true;
 
 	time_t now;
 
