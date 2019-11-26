@@ -35,6 +35,7 @@ add_executable(csn
 	store-http.c
 	index.c
 	target.c
+	ui.c
 	main.c
 )
 target_link_libraries(csn ${ZSTD_LIBRARIES} ${CURL_LIBRARIES} ${CRYPTO_LIBRARIES})
@@ -47,6 +48,7 @@ if(BUILD_PATCHDD)
 	add_executable(patchdd
 	               log.c
 	               utils.c
+	               ui.c
 	               patchdd.c
 	)
 

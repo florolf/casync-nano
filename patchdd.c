@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "utils.h"
+#include "ui.h"
 
 #define TRANSFER_SIZE (1024 * 1024)
 
@@ -20,19 +21,6 @@ static size_t memcmp_offset(uint8_t *a, uint8_t *b, size_t len)
 			break;
 
 	return offset;
-}
-
-static void progress(int percent)
-{
-	static size_t calls = 0;
-	static const char spinner[] = "-\\|//";
-
-	printf("\033[0G[%c] %3d%%", spinner[calls++ % strlen(spinner)], percent);
-
-	if (percent == 100)
-		putchar('\n');
-
-	fflush(stdout);
 }
 
 int main(int argc, char **argv)
@@ -79,6 +67,7 @@ int main(int argc, char **argv)
 	uint8_t dst_buf[TRANSFER_SIZE];
 
 	bool print_progress = isatty(STDOUT_FILENO);
+	progess_status_t progess_status = PROGRESS_STATUS_INIT;
 
 	off_t offset = 0;
 	off_t total_skipped = 0;
@@ -100,7 +89,7 @@ int main(int argc, char **argv)
 		offset += to_read;
 
 		if (print_progress)
-			progress((100ull * offset) / src_size);
+			show_progress((100ull * offset) / src_size, &progess_status);
 	}
 
 	if (fsync(dst) < 0) {
