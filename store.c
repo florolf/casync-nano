@@ -65,7 +65,7 @@ static void store_chain_free(struct store *s)
 {
 	struct store_chain *sc = (struct store_chain*) s;
 
-	u_log(INFO, "%"PRIu32" queries recieved by %s",
+	u_log(INFO, "%"PRIu32" queries received by %s",
 	      sc->queries, store_get_name(s));
 	for (size_t i = 0; i < sc->n_stores; i++)
 		u_log(INFO, "    %"PRIu32" answered by store %s",
