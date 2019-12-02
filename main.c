@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "caibx.h"
 #include "chunker.h"
+#include "sha.h"
 #include "store-local.h"
 #include "store-http.h"
 #include "target.h"
@@ -97,6 +98,17 @@ static int csn(int argc, char **argv)
 	if (argc < 3) {
 		fprintf(stderr, "usage: %s input.caibx target [store ...]\n", argv[0]);
 		return -1;
+	}
+
+	const char *env;
+
+	if ((env = getenv("CSN_KCAPI_DRIVER")) != NULL) {
+		if (sha_kcapi_init(env) < 0) {
+			u_log(ERR, "kcapi init failed");
+			return -1;
+		}
+
+		u_log(DEBUG, "kcapi enabled with driver '%s'", env);
 	}
 
 	index_fd = open(argv[1], O_RDONLY);
