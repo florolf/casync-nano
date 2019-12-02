@@ -31,6 +31,7 @@ add_executable(csn
 	chunk.c
 	chunker.c
 	caibx.c
+	sha.c
 	store.c
 	store-local.c
 	store-http.c
