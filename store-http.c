@@ -318,6 +318,21 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	// everything went fine: reset the error counter
 	hs->error_count = 0;
 
+	uint8_t actual_id[CHUNK_ID_LEN];
+	chunk_calculate_id(out, ctx.outbuf_written, actual_id);
+
+	if (memcmp(actual_id, id, CHUNK_ID_LEN) != 0) {
+		char id_str[CHUNK_ID_STRLEN], actual_id_str[CHUNK_ID_STRLEN];
+
+		chunk_format_id(id_str, id);
+		chunk_format_id(actual_id_str, actual_id);
+
+		u_log(WARN, "chunk id mismatch (expected %s, got %s)",
+		      id_str, actual_id_str);
+
+		return 0;
+	}
+
 	return ctx.outbuf_written;
 }
 
