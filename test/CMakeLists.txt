@@ -19,10 +19,7 @@ link_libraries(-fsanitize=address -fsanitize=undefined)
 
 add_compile_definitions(TESTING)
 
-set(MAIN_SRCS "${PROJECT_SOURCE_DIR}/$<JOIN:$<TARGET_PROPERTY:libcsn,SOURCES>, ${PROJECT_SOURCE_DIR}/>")
-separate_arguments(MAIN_SRCS)
-
-add_executable(chunker_test ${MAIN_SRCS} chunker_test.c xorshift32.c)
+add_executable(chunker_test chunker_test.c xorshift32.c ../chunker.c ../chunk.c ../log.c ../utils.c)
 target_include_directories(chunker_test PRIVATE ${PROJECT_SOURCE_DIR} ${CURRENT_SOURCE_DIR} ${CMOCKA_INCLUDES})
 target_link_libraries(chunker_test PRIVATE ${CMOCKA_LIBRARIES} ${CRYPTO_LIBRARIES})
 add_test(chunker_test chunker_test)

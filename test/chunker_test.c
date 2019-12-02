@@ -16,9 +16,13 @@ static int create_chunker(void **state)
 
 	struct chunker *c = (struct chunker*)*state;
 
-	chunker_init(c, CHUNKER_SIZE_AVG_DEFAULT/4,
-	             CHUNKER_SIZE_AVG_DEFAULT,
-	             CHUNKER_SIZE_AVG_DEFAULT*4);
+	struct chunker_params params = {
+		.min_size = CHUNKER_SIZE_AVG_DEFAULT / 4,
+		.avg_size = CHUNKER_SIZE_AVG_DEFAULT,
+		.max_size = CHUNKER_SIZE_AVG_DEFAULT * 4,
+	};
+
+	chunker_init(c, &params);
 
 	return 0;
 }
