@@ -203,6 +203,13 @@ static int set_url(struct store_http *hs, uint8_t *id)
 	return 0;
 }
 
+static bool curl_is_transient_error(CURLcode code)
+{
+	return code == CURLE_COULDNT_CONNECT ||
+	       code == CURLE_COULDNT_RESOLVE_HOST ||
+	       code == CURLE_OPERATION_TIMEDOUT;
+}
+
 static CURLcode retried_curl_easy_perform(CURL *handle)
 {
 	CURLcode ret;
@@ -212,7 +219,7 @@ static CURLcode retried_curl_easy_perform(CURL *handle)
 	do {
 		ret = curl_easy_perform(handle);
 
-		if (!(ret == CURLE_COULDNT_CONNECT || ret == CURLE_COULDNT_RESOLVE_HOST))
+		if (!curl_is_transient_error(ret))
 			break;
 
 		remaining--;
@@ -265,8 +272,8 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	CURLcode curl_ret;
 	curl_ret = retried_curl_easy_perform(hs->curl);
 
-	if (curl_ret == CURLE_COULDNT_CONNECT || curl_ret == CURLE_COULDNT_RESOLVE_HOST) {
-		u_log(WARN, "failed to connect to server, increasing error counter");
+	if (curl_is_transient_error(curl_ret)) {
+		u_log(WARN, "transient transfer failure, increasing error counter");
 		return increase_error_counter(hs);
 	}
 
@@ -390,6 +397,12 @@ struct store *store_http_new(const char *baseurl)
 
 	curl_checked_setopt(hs->curl, CURLOPT_FOLLOWLOCATION,
 	                    (long)1, goto err_curl);
+
+	curl_checked_setopt(hs->curl, CURLOPT_LOW_SPEED_TIME,
+	                    (long)15, goto err_curl);
+
+	curl_checked_setopt(hs->curl, CURLOPT_LOW_SPEED_LIMIT,
+	                    (long)10, goto err_curl);
 
 	hs->zstd = ZSTD_createDStream();
 	u_notnull(hs->zstd, goto err_curl);
