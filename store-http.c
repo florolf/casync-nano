@@ -212,7 +212,7 @@ static CURLcode retried_curl_easy_perform(CURL *handle)
 	do {
 		ret = curl_easy_perform(handle);
 
-		if (ret != CURLE_COULDNT_CONNECT)
+		if (!(ret == CURLE_COULDNT_CONNECT || ret == CURLE_COULDNT_RESOLVE_HOST))
 			break;
 
 		remaining--;
@@ -265,7 +265,7 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	CURLcode curl_ret;
 	curl_ret = retried_curl_easy_perform(hs->curl);
 
-	if (curl_ret == CURLE_COULDNT_CONNECT) {
+	if (curl_ret == CURLE_COULDNT_CONNECT || curl_ret == CURLE_COULDNT_RESOLVE_HOST) {
 		u_log(WARN, "failed to connect to server, increasing error counter");
 		return increase_error_counter(hs);
 	}
