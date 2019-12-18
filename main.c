@@ -31,7 +31,7 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 {
 	static bool have_last_id = false;
 	static uint8_t last_id[CHUNK_ID_LEN];
-	static uint8_t buf[256*1024];
+	static uint8_t buf[256*1024] __attribute__((aligned(4096)));
 
 	if (!have_last_id || memcmp(last_id, id, CHUNK_ID_LEN) != 0) {
 		ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
