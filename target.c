@@ -48,9 +48,12 @@ int target_write(struct target *t, uint8_t *data, size_t len, off_t offset, uint
 	}
 
 	struct index_entry *e;
-	e = index_insert(&t->idx, offset, len, id);
-	if (!e)
-		u_log(WARN, "inserting chunk into index failed");
+	e = index_query(&t->idx, id);
+	if (!e) {
+		e = index_insert(&t->idx, offset, len, id);
+		if (!e)
+			u_log(WARN, "inserting chunk into index failed");
+	}
 
 	return 0;
 }
