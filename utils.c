@@ -60,7 +60,7 @@ must_check int preadall(int fd, uint8_t *buf, size_t len, off_t offset)
 	return 0;
 }
 
-int pwriteall(int fd, uint8_t *buf, size_t len, off_t offset)
+int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset)
 {
 	size_t written_bytes = 0;
 

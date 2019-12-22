@@ -26,7 +26,7 @@ void index_cleanup(struct index *idx)
 	free(idx->entries);
 }
 
-struct index_entry *index_insert(struct index *idx, uint64_t offset, uint32_t len, uint8_t *id)
+struct index_entry *index_insert(struct index *idx, uint64_t offset, uint32_t len, const uint8_t *id)
 {
 	u_assert(idx);
 	u_assert(len != 0);
@@ -84,7 +84,7 @@ static void index_sort(struct index *idx)
 	idx->sorted = true;
 }
 
-struct index_entry *index_query(struct index *idx, uint8_t *id)
+struct index_entry *index_query(struct index *idx, const uint8_t *id)
 {
 	u_assert(idx);
 	u_assert(id);

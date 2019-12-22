@@ -22,5 +22,5 @@ struct index {
 int index_init(struct index *idx, size_t expected_size);
 void index_cleanup(struct index *idx);
 
-struct index_entry *index_insert(struct index *idx, uint64_t offset, uint32_t len, uint8_t *id);
-struct index_entry *index_query(struct index *idx, uint8_t *id);
+struct index_entry *index_insert(struct index *idx, uint64_t offset, uint32_t len, const uint8_t *id);
+struct index_entry *index_query(struct index *idx, const uint8_t *id);

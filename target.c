@@ -35,7 +35,7 @@ static ssize_t target_get_chunk(struct store *s, uint8_t *id, uint8_t *out, size
 	return e->len;
 }
 
-int target_write(struct target *t, uint8_t *data, size_t len, off_t offset, uint8_t *id)
+int target_write(struct target *t, const uint8_t *data, size_t len, off_t offset, const uint8_t *id)
 {
 	u_assert(t);
 	u_assert(id);

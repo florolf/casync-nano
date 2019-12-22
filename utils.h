@@ -83,7 +83,7 @@ static inline uint64_t unp64le(uint8_t *data) {
 
 must_check int readall(int fd, uint8_t *buf, size_t len);
 must_check int preadall(int fd, uint8_t *buf, size_t len, off_t offset);
-must_check int pwriteall(int fd, uint8_t *buf, size_t len, off_t offset);
+must_check int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset);
 
 #define checked(expr, action) do { \
 	if ((expr) < 0) { \
