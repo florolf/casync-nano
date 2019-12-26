@@ -33,7 +33,7 @@ static inline const char *store_get_name(struct store *s)
 
 void store_free(struct store *s);
 
-struct store_chain *store_chain_new(size_t size);
+struct store_chain *store_chain_new(size_t size_hint);
 int store_chain_append(struct store_chain *sc, struct store *s);
 
 static inline struct store *store_chain_to_store(struct store_chain *sc)

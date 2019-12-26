@@ -80,7 +80,7 @@ static void store_chain_free(struct store *s)
 	free(sc);
 }
 
-struct store_chain *store_chain_new(size_t size)
+struct store_chain *store_chain_new(size_t size_hint)
 {
 	static int chain_ctr = 0;
 
@@ -88,11 +88,14 @@ struct store_chain *store_chain_new(size_t size)
 	sc = calloc(1, sizeof(*sc));
 	u_notnull(sc, return NULL);
 
-	sc->stores = calloc(size, sizeof(*sc->stores));
-	u_notnull(sc->stores, goto err_sc);
-
 	sc->n_stores = 0;
-	sc->stores_space = size;
+	if (size_hint)
+		sc->stores_space = size_hint;
+	else
+		sc->stores_space = 1;
+
+	sc->stores = calloc(sc->stores_space, sizeof(*sc->stores));
+	u_notnull(sc->stores, goto err_sc);
 
 	snprintf(sc->s.name, sizeof(sc->s.name), "chain%d", chain_ctr);
 	sc->s.get_chunk = store_chain_get_chunk;
@@ -109,7 +112,17 @@ err_sc:
 
 int store_chain_append(struct store_chain *sc, struct store *s)
 {
-	u_assert(sc->n_stores < sc->stores_space);
+	if (sc->n_stores >= sc->stores_space) {
+		struct substore *new_stores;
+		size_t new_space;
+
+		new_space = sc->stores_space * 2;
+		new_stores = realloc(sc->stores, new_space * sizeof(*sc->stores));
+		u_notnull(new_stores, return -1);
+
+		sc->stores = new_stores;
+		sc->stores_space = new_space;
+	}
 
 	struct substore *substore = &sc->stores[sc->n_stores];
 	substore->s = s;
