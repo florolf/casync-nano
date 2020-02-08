@@ -161,7 +161,18 @@ restart:
 		return e->len;
 	}
 
-	u_log(ERR, "chunk validation failure rescanning store");
+	char chunk_id_str[CHUNK_ID_STRLEN];
+	u_log(ERR, "chunk validation failure at offset %"PRIu64" (chunk length %"PRIu32")",
+	      e->start, e->len);
+
+	chunk_format_id(chunk_id_str, id);
+	u_log(ERR, " expected chunk id: %s", chunk_id_str);
+
+	chunk_format_id(chunk_id_str, actual_chunk_id);
+	u_log(ERR, " got chunk id: %s", chunk_id_str);
+
+	u_log(ERR, "rescanning store '%s'", s->name);
+
 	index_cleanup(&ls->idx);
 	if (store_scan(ls) < 0) {
 		u_log(ERR, "rescanning store failed");
