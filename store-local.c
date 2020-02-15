@@ -215,7 +215,7 @@ struct store *store_local_new(const char *path, const char *index,
 		u_log(INFO, "trying to sideload index '%s' for store '%s'", index, path);
 
 		if (store_sideload_index(ls, index) == 0) {
-			u_log(WARN, "sideloading succeeded");
+			u_log(INFO, "sideloading succeeded");
 			return (struct store*)ls;
 		}
 
