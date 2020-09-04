@@ -210,20 +210,23 @@ static bool curl_is_transient_error(CURLcode code)
 	       code == CURLE_OPERATION_TIMEDOUT;
 }
 
-static CURLcode retried_curl_easy_perform(CURL *handle)
+static CURLcode retried_curl_easy_perform(struct store_http *hs)
 {
 	CURLcode ret;
 	int remaining = CONNECT_TRIES;
 	useconds_t wait_us = 200 * 1000;
 
 	do {
-		ret = curl_easy_perform(handle);
+		ret = curl_easy_perform(hs->curl);
 
 		if (!curl_is_transient_error(ret))
 			break;
 
 		remaining--;
-		u_log(WARN, "connection failed, retrying %d more times", remaining);
+		u_log(WARN, "connection failed (%s%s%s), retrying %d more times",
+		      curl_easy_strerror(ret),
+		      hs->curl_err_buf[0] ? ": " : "", hs->curl_err_buf,
+		      remaining);
 
 		usleep(wait_us);
 		wait_us = MIN(2*wait_us, 10ul*1000*1000);
@@ -270,7 +273,7 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	u_log(DEBUG, "trying to fetch chunk from '%s'", hs->url_buf);
 
 	CURLcode curl_ret;
-	curl_ret = retried_curl_easy_perform(hs->curl);
+	curl_ret = retried_curl_easy_perform(hs);
 
 	if (curl_is_transient_error(curl_ret)) {
 		u_log(WARN, "transient transfer failure, increasing error counter");
