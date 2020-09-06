@@ -95,8 +95,8 @@ static int append_store_from_arg(struct store_chain *sc, char *arg)
 
 static int csn(int argc, char **argv)
 {
-	if (argc < 3) {
-		fprintf(stderr, "usage: %s input.caibx target [store ...]\n", argv[0]);
+	if (argc < 4) {
+		fprintf(stderr, "usage: %s input.caibx target store [store ...]\n", argv[0]);
 		return -1;
 	}
 
