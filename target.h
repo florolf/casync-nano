@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "store.h"
 #include "index.h"
@@ -10,6 +11,7 @@ struct target {
 
 	struct index idx;
 	int fd;
+	bool queryable;
 };
 
 struct target *target_new(const char *path);
@@ -18,5 +20,6 @@ int target_write(struct target *t, const uint8_t *data, size_t len, off_t offset
 
 static inline struct store *target_as_store(struct target *t)
 {
+	t->queryable = true;
 	return &t->s;
 }

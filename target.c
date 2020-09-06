@@ -15,6 +15,9 @@ static ssize_t target_get_chunk(struct store *s, uint8_t *id, uint8_t *out, size
 {
 	struct target *t = (struct target*) s;
 
+	if (!t->queryable)
+		return 0;
+
 	struct index_entry *e;
 	e = index_query(&t->idx, id);
 
@@ -46,6 +49,9 @@ int target_write(struct target *t, const uint8_t *data, size_t len, off_t offset
 		u_log_errno("writing %zu bytes to target failed", len);
 		return -1;
 	}
+
+	if (!t->queryable)
+		return 0;
 
 	struct index_entry *e;
 	e = index_query(&t->idx, id);
