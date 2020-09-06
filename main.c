@@ -20,6 +20,7 @@
 #include "ui.h"
 
 static struct store *store;
+const char *target_path;
 static struct target *target;
 static struct chunker_params chunker_params;
 static size_t n_entries;
@@ -65,7 +66,9 @@ static int append_store_from_arg(struct store_chain *sc, char *arg)
 {
 	struct store *s;
 
-	if (startswith(arg, "http")) {
+	if (streq(arg, target_path)) {
+		s = target_as_store(target);
+	} else if (startswith(arg, "http")) {
 		s = store_http_new(arg);
 		if (!s) {
 			u_log(ERR, "creating HTTP store from '%s' failed", arg);
@@ -122,7 +125,8 @@ static int csn(int argc, char **argv)
 		return -1;
 	}
 
-	target = target_new(argv[2]);
+	target_path = argv[2];
+	target = target_new(target_path);
 	if (!target) {
 		u_log(ERR, "creating target failed");
 		return -1;
@@ -131,11 +135,6 @@ static int csn(int argc, char **argv)
 	struct store_chain *sc = store_chain_new(argc - 3 + 1);
 	if (!sc) {
 		u_log(ERR, "creating storechain failed");
-		return -1;
-	}
-
-	if (store_chain_append(sc, target_as_store(target)) < 0) {
-		u_log(ERR, "appending target to store chain failed");
 		return -1;
 	}
 
@@ -194,7 +193,8 @@ static int casync(int argc, char **argv)
 		return -1;
 	}
 
-	target = target_new(argv[argc-1]);
+	target_path = argv[argc-1];
+	target = target_new(target_path);
 	if (!target) {
 		u_log(ERR, "creating target failed");
 		return -1;
@@ -204,11 +204,6 @@ static int casync(int argc, char **argv)
 	struct store_chain *sc = store_chain_new((argc - 4) / 2 + 1);
 	if (!sc) {
 		u_log(ERR, "creating storechain failed");
-		return -1;
-	}
-
-	if (store_chain_append(sc, target_as_store(target)) < 0) {
-		u_log(ERR, "appending target to store chain failed");
 		return -1;
 	}
 
