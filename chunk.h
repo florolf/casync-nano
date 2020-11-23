@@ -13,5 +13,5 @@ void chunk_format_id(char *id_str, uint8_t *id);
 
 static inline void chunk_calculate_id(uint8_t *data, size_t len, uint8_t *id_out)
 {
-	u_assert(sha_once(data, len, id_out) == 0);
+	u_assert_se(sha_once(data, len, id_out) == 0);
 }
