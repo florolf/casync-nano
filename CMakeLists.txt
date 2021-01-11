@@ -44,7 +44,6 @@ target_link_libraries(csn ${ZSTD_LIBRARIES} ${CURL_LIBRARIES} ${CRYPTO_LIBRARIES
 target_include_directories(csn PRIVATE ${ZSTD_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${CRYPTO_INCLUDE_DIRS})
 
 install(TARGETS csn RUNTIME DESTINATION bin)
-install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink csn \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/bin/casync)")
 
 if(BUILD_PATCHDD)
 	add_executable(patchdd
