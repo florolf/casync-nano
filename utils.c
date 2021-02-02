@@ -5,9 +5,51 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+
+#ifdef __APPLE__
+#include <sys/disk.h>
+#endif
+
+#ifdef __linux__
 #include <linux/fs.h>
+#endif
 
 #include "utils.h"
+
+static int blockdevice_size(int fd, off_t *size_ptr)
+#if defined(__APPLE__)
+{
+	uint32_t size;
+	uint64_t count;
+
+	if (ioctl(fd, DKIOCGETBLOCKSIZE, &size) < 0) {
+		u_log_errno("getting device block size failed");
+		return -1;
+	}
+
+	if (ioctl(fd, DKIOCGETBLOCKCOUNT, &count) < 0) {
+		u_log_errno("getting device block count failed");
+		return -1;
+	}
+
+	*size_ptr = (off_t)(size * count);
+	return 0;
+}
+#elif defined(__linux__)
+{
+	uint64_t tmp;
+
+	if (ioctl(fd, BLKGETSIZE64, &tmp) < 0) {
+		u_log_errno("getting block device size failed");
+		return -1;
+	}
+
+	*size_ptr = (off_t)tmp;
+	return 0;
+}
+#else
+#error "blockdevice_size not implemented for target"
+#endif
 
 must_check int readall(int fd, uint8_t *buf, size_t len)
 {
@@ -100,13 +142,7 @@ int fd_size(int fd, off_t *size_out)
 	if (S_ISREG(s.st_mode)) {
 		*size_out = s.st_size;
 	} else if (S_ISBLK(s.st_mode)) {
-		uint64_t tmp;
-		if (ioctl(fd, BLKGETSIZE64, &tmp) < 0) {
-			u_log_errno("getting block device size failed");
-			return -1;
-		}
-
-		*size_out = (off_t)tmp;
+		return blockdevice_size(fd, size_out);
 	} else {
 		u_log(ERR, "unsupported file type: 0%o", s.st_mode & S_IFMT);
 		return -1;
