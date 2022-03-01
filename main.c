@@ -33,8 +33,17 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 	static bool have_last_id = false;
 	static uint8_t last_id[CHUNK_ID_LEN];
 	static uint8_t buf[256*1024] __attribute__((aligned(4096)));
+	static uint8_t buf2[256*1024] __attribute__((aligned(4096)));
+	bool skip_write = false;
 
-	if (!have_last_id || memcmp(last_id, id, CHUNK_ID_LEN) != 0) {
+	if (have_last_id && memcmp(last_id, id, CHUNK_ID_LEN) == 0) {
+		if (target_check_chunk(target, buf2, len, offset, id) > 0)
+			skip_write = true;
+	} else if (target_check_chunk(target, buf, len, offset, id) > 0) {
+		memcpy(last_id, id, CHUNK_ID_LEN);
+		have_last_id = true;
+		skip_write = true;
+	} else {
 		ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
 		if (ret < 0 || len != (size_t)ret) {
 			u_log(ERR, "result size %zd does not match expected length %"PRIu32, ret, len);
@@ -45,7 +54,7 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 		have_last_id = true;
 	}
 
-	if (target_write(target, buf, len, offset, id) < 0) {
+	if (!skip_write && target_write(target, buf, len, offset, id) < 0) {
 		u_log(ERR, "failed to store chunk to target");
 		return -1;
 	}
