@@ -11,6 +11,38 @@
 
 #include "target.h"
 
+static void target_add_chunk(struct target *t, size_t len, off_t offset, const uint8_t *id)
+{
+	if (!t->queryable)
+		return;
+
+	struct index_entry *e;
+	e = index_query(&t->idx, id);
+	if (!e) {
+		e = index_insert(&t->idx, offset, len, id);
+		if (!e)
+			u_log(WARN, "inserting chunk into index failed");
+	}
+}
+
+int target_check_chunk(struct target *t, uint8_t *tmp, size_t len, off_t offset, const uint8_t *id)
+{
+	uint8_t calculated_id[CHUNK_ID_LEN];
+
+	if (preadall(t->fd, tmp, len, offset) < 0) {
+		u_log(WARN, "reading chunk failed");
+		return -1;
+	}
+
+	chunk_calculate_id(tmp, len, calculated_id);
+	if (memcmp(calculated_id, id, CHUNK_ID_LEN))
+		return 0;
+
+	target_add_chunk(t, len, offset, id);
+
+	return 1;
+}
+
 static ssize_t target_get_chunk(struct store *s, uint8_t *id, uint8_t *out, size_t out_max)
 {
 	struct target *t = (struct target*) s;
@@ -50,16 +82,7 @@ int target_write(struct target *t, const uint8_t *data, size_t len, off_t offset
 		return -1;
 	}
 
-	if (!t->queryable)
-		return 0;
-
-	struct index_entry *e;
-	e = index_query(&t->idx, id);
-	if (!e) {
-		e = index_insert(&t->idx, offset, len, id);
-		if (!e)
-			u_log(WARN, "inserting chunk into index failed");
-	}
+	target_add_chunk(t, len, offset, id);
 
 	return 0;
 }

@@ -24,6 +24,7 @@ const char *target_path;
 static struct target *target;
 static struct chunker_params chunker_params;
 static size_t n_entries;
+static size_t skipped;
 static int index_fd;
 
 static bool interactive = false;
@@ -31,8 +32,27 @@ static bool interactive = false;
 static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 {
 	static bool have_last_id = false;
+	static bool resuming = true;
 	static uint8_t last_id[CHUNK_ID_LEN];
 	static uint8_t buf[256*1024] __attribute__((aligned(4096)));
+
+	if (resuming) {
+		if (len > sizeof(buf)) {
+			u_log(ERR, "chunk length (%"PRIu32") at offset %"PRIu64" exceeds buffer size (%zu)",
+			      len, offset, sizeof(buf));
+
+			// this means the index file is incompatible and store_get_chunk
+			// would bail out anyway, abort.
+			return -1;
+		}
+
+		if (target_check_chunk(target, buf, len, offset, id) == 1) {
+			skipped++;
+			goto progress;
+		}
+
+		resuming = false;
+	}
 
 	if (!have_last_id || memcmp(last_id, id, CHUNK_ID_LEN) != 0) {
 		ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
@@ -50,6 +70,7 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 		return -1;
 	}
 
+progress:
 	// only show progress bar when running interactively and not spamming
 	// debug information anyway
 	if (interactive && !check_loglevel(U_LOG_DEBUG)) {
@@ -284,6 +305,8 @@ int main(int argc, char **argv)
 
 	now = time_monotonic();
 	u_log(INFO, "synchronization finished after %u seconds", (unsigned int)(now - start));
+	if (skipped)
+		u_log(INFO, "skipped prefix of %zu chunks", skipped);
 
 	store_free(store);
 
