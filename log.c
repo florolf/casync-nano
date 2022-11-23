@@ -9,10 +9,13 @@
 #include "log.h"
 
 static enum u_loglevel loglevel = U_LOG_INFO;
+static bool is_tty;
 
 void u_log_init(void)
 {
 	const char *s;
+
+	is_tty = isatty(STDERR_FILENO);
 
 	s = getenv("LOGLEVEL");
 	if (!s)
@@ -60,7 +63,7 @@ void _u_log(enum u_loglevel level, const char *path, const char *func, int line,
 		file = path;
 
 	char buf[128];
-	if (isatty(STDERR_FILENO)) {
+	if (is_tty) {
 		static const int color_map[] = {
 			[U_LOG_ERR] = COLOR_RED,
 			[U_LOG_WARN] = COLOR_ORANGE,
