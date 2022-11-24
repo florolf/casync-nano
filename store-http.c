@@ -375,12 +375,14 @@ struct store *store_http_new(const char *baseurl)
 	hs = calloc(1, sizeof(*hs));
 	u_notnull(hs, return NULL);
 
-	hs->baseurl = strdup(baseurl);
-	u_notnull(hs->baseurl, goto err_hs);
+	char *tmp = strdup(baseurl);
+	u_notnull(tmp, goto err_hs);
 
 	char *p;
-	if ((p = strrchr(hs->baseurl, '/')) && *(p+1) == 0)
+	if ((p = strrchr(tmp, '/')) && *(p+1) == 0)
 		*p = 0;
+
+	hs->baseurl = tmp;
 
 	hs->url_buf = malloc(strlen(baseurl) + CHUNK_SUFFIX_LEN + 1);
 	u_notnull(hs->url_buf, goto err_baseurl);
