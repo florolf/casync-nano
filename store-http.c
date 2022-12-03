@@ -384,7 +384,7 @@ struct store *store_http_new(const char *baseurl)
 
 	hs->baseurl = tmp;
 
-	hs->url_buf = malloc(strlen(baseurl) + CHUNK_SUFFIX_LEN + 1);
+	hs->url_buf = malloc(strlen(hs->baseurl) + CHUNK_SUFFIX_LEN + 1);
 	u_notnull(hs->url_buf, goto err_baseurl);
 
 	snprintf(hs->s.name, sizeof(hs->s.name), "%s", baseurl);
