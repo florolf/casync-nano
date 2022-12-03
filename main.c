@@ -88,7 +88,7 @@ static int append_store_from_arg(struct store_chain *sc, char *arg)
 	struct store *s;
 
 	if (streq(arg, target_path)) {
-		s = target_as_store(target);
+		s = target_as_store(target, n_entries);
 		if (!s) {
 			u_log(ERR, "creating store from target failed");
 			return -1;

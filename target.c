@@ -120,18 +120,11 @@ err_target:
 	return NULL;
 }
 
-struct store *target_as_store(struct target *t)
+struct store *target_as_store(struct target *t, size_t chunk_estimate)
 {
 	if (t->queryable)
 		return &t->s;
 
-	off_t size;
-	checked(fd_size(t->fd, &size), return NULL);
-
-	/* We don't want to pollute the API with chunker parameters here. Let's
-	 * just use the default as a reasonable estimate.
-	 */
-	size_t chunk_estimate = (12ull * size/CHUNKER_SIZE_AVG_DEFAULT) / 10;
 	u_log(DEBUG, "initializing index with an estimated %zu chunks", chunk_estimate);
 	if (index_init(&t->idx, chunk_estimate) < 0) {
 		u_log(ERR, "initializing index failed");
