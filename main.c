@@ -89,6 +89,10 @@ static int append_store_from_arg(struct store_chain *sc, char *arg)
 
 	if (streq(arg, target_path)) {
 		s = target_as_store(target);
+		if (!s) {
+			u_log(ERR, "creating store from target failed");
+			return -1;
+		}
 	} else if (startswith(arg, "http")) {
 		s = store_http_new(arg);
 		if (!s) {

@@ -112,8 +112,21 @@ struct target *target_new(const char *path)
 	 */
 	t->s.free = NULL;
 
+	return t;
+
+err_target:
+	free(t);
+
+	return NULL;
+}
+
+struct store *target_as_store(struct target *t)
+{
+	if (t->queryable)
+		return &t->s;
+
 	off_t size;
-	checked(fd_size(t->fd, &size), goto err_fd);
+	checked(fd_size(t->fd, &size), return NULL);
 
 	/* We don't want to pollute the API with chunker parameters here. Let's
 	 * just use the default as a reasonable estimate.
@@ -122,16 +135,9 @@ struct target *target_new(const char *path)
 	u_log(DEBUG, "initializing index with an estimated %zu chunks", chunk_estimate);
 	if (index_init(&t->idx, chunk_estimate) < 0) {
 		u_log(ERR, "initializing index failed");
-		goto err_fd;
+		return NULL;
 	}
 
-	return t;
-
-err_fd:
-	close(t->fd);
-
-err_target:
-	free(t);
-
-	return NULL;
+	t->queryable = true;
+	return &t->s;
 }
