@@ -78,7 +78,7 @@ static const uint32_t buzhash_table[] = {
 int chunker_params_set(struct chunker_params *params, uint64_t min_size, uint64_t avg_size, uint64_t max_size)
 {
 	// FIXME: support fixed-size chunks
-	if (!(min_size < avg_size) && (avg_size < max_size)) {
+	if (!(min_size < avg_size && avg_size < max_size)) {
 		u_log(ERR, "non-monotonic chunk size parameters: %"PRIu64" / %"PRIu64" / %"PRIu64,
 		      min_size, avg_size, max_size);
 		return -1;
