@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
-project(csn)
+project(csn LANGUAGES C)
 
 option(BUILD_PATCHDD "build patchdd utility" OFF)
 option(BUILD_CSN "build main casync tool" ON)
