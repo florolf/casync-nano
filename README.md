@@ -8,6 +8,8 @@ light on dependencies and system resources in operation.
 It implements enough of the regular casync CLI to work as a drop-in
 replacement in the casync mode of [RAUC](https://rauc.io/).
 
+See the [man page](doc/csn.1.scd) for more details.
+
 ## Scope
 
 casync-nano is meant to be used as part of an image-based differential
