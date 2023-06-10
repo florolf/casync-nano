@@ -31,9 +31,7 @@ implementation lacks:
 
 ## State
 
-casync-nano works and is actively being used. However, it should still be
-considered alpha-quality software. Many possible optimizations still have to be
-implemented.
+casync-nano is stable and is actively being used in the field.
 
 Currently, casync-nano only supports reading from and writing to block devices
 (such as eMMC storage).
