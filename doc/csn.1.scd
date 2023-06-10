@@ -84,7 +84,8 @@ algorithm specifier/driver of the Linux kernel crypto API is used for
 calculating SHA256 checksums (via the _AF_ALG_ mechanism). Note that this might
 actually be slower than using the default user space software implementation
 depending on your hardware. Please run a benchmark before using this in your
-application.
+application. The source distribution includes the csn-bench tool that can be
+used for this purpose.
 
 # OPERATION
 

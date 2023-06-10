@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 project(csn LANGUAGES C)
 
 option(BUILD_PATCHDD "build patchdd utility" OFF)
+option(BUILD_CSN_BENCH "build casync-nano benchmarking utility" OFF)
 option(BUILD_CSN "build main casync tool" ON)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
@@ -62,4 +63,20 @@ if(BUILD_PATCHDD)
 	)
 
 	install(TARGETS patchdd RUNTIME DESTINATION bin)
+endif()
+
+if(BUILD_CSN_BENCH)
+	add_executable(csn-bench
+	               log.c
+	               utils.c
+	               sha.c
+		       chunker.c
+	               test/xorshift32.c
+	               csn-bench.c
+	)
+
+	target_link_libraries(csn-bench ${CRYPTO_LIBRARIES})
+	target_include_directories(csn-bench PRIVATE ${CRYPTO_INCLUDE_DIRS})
+
+	install(TARGETS csn-bench RUNTIME DESTINATION bin)
 endif()
