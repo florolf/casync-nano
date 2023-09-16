@@ -70,7 +70,7 @@ static inline uint32_t rol32(uint32_t x, size_t n)
 
 #define must_check __attribute__ ((warn_unused_result))
 
-static inline uint64_t unp64le(uint8_t *data) {
+static inline uint64_t unp64le(const uint8_t *data) {
 	return ((uint64_t)data[7] << 56) |
 	       ((uint64_t)data[6] << 48) |
 	       ((uint64_t)data[5] << 40) |
