@@ -63,8 +63,11 @@ static int decode_buffer_absorb(struct store_http *hs, uint8_t *data, size_t len
 		size_t new_size;
 
 		new_size = hs->decode_buffer_size + len;
-		if (new_size < hs->decode_buffer_size)
+		if (new_size < hs->decode_buffer_size) {
+			u_log(ERR, "incrementing decode buffer size %zu by %zu overflows",
+			      hs->decode_buffer_size, len);
 			return -1;
+		}
 
 		new_buf = realloc(hs->decode_buffer, new_size);
 		if (!new_buf) {
@@ -161,7 +164,8 @@ static size_t store_http_data_cb(char *ptr, size_t size, size_t nmemb, void *use
 
 	ssize_t ret;
 	if (ctx->hs->decode_buffer_fill) {
-		decode_buffer_absorb(ctx->hs, (uint8_t*)ptr, nmemb);
+		if (decode_buffer_absorb(ctx->hs, (uint8_t*)ptr, nmemb) < 0)
+			goto fail;
 
 		ret = handle_data(ctx, ctx->hs->decode_buffer, ctx->hs->decode_buffer_fill);
 		if (ret < 0)
@@ -177,7 +181,8 @@ static size_t store_http_data_cb(char *ptr, size_t size, size_t nmemb, void *use
 		} else if ((size_t)ret < nmemb) {
 			// if we haven't used up all the data we were given, push it
 			// into the buffer for the next time around
-			decode_buffer_absorb(ctx->hs, (uint8_t*)&ptr[ret], nmemb - ret);
+			if (decode_buffer_absorb(ctx->hs, (uint8_t*)&ptr[ret], nmemb - ret) < 0)
+				goto fail;
 		}
 	}
 
