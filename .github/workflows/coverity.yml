@@ -1,0 +1,29 @@
+name: Coverity Scan
+on:
+  workflow_dispatch:
+  push:
+      branches:
+        - master
+
+jobs:
+  coverity:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: sudo apt-get update -qq
+
+      - run: sudo apt-get install -y
+             libssl-dev
+             libcurl4-openssl-dev
+
+      - uses: actions/checkout@v4
+
+      - run: cmake
+             -DBUILD_TESTING=Off
+             -B ${{github.workspace}}/build
+
+      - uses: vapier/coverity-scan-action@v1
+        with:
+          project: casync-nano
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          command: make -C ${{github.workspace}}/build
