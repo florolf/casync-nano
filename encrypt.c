@@ -141,3 +141,55 @@ int encrypt_do(struct encrypt_ctx *ctx, uint8_t *out, const uint8_t *in, size_t 
 
 	return 0;
 }
+
+int encrypt_parse_keyspec(uint8_t key_out[static 32], const char *keyspec)
+{
+	int ret = -1;
+
+	const char *key_str;
+	bool do_free = false;
+
+	if (startswith(keyspec, "key:")) {
+		key_str = &keyspec[4];
+	} else if (startswith(keyspec, "env:")) {
+		key_str = getenv(&keyspec[4]);
+		if (!key_str) {
+			u_log(ERR, "could not retrieve environment variable '%s'", &keyspec[4]);
+			return -1;
+		}
+	} else if(startswith(keyspec, "file:")) {
+		char *slurped = slurp_file(&keyspec[5], true, NULL);
+		if (!slurped)
+			return -1;
+
+		chomp(slurped);
+
+		key_str = slurped;
+		do_free = true;
+	} else {
+		u_log(ERR, "unknown keyspec used in '%s'", keyspec);
+		return -1;
+	}
+
+	if (strlen(key_str) != 64) {
+		u_log(ERR, "encryption key must be exactly 64 hex characters, but is %zu long", strlen(key_str));
+		goto out;
+	}
+
+	if (parse_hex(key_out, key_str) < 0) {
+		u_log(ERR, "decoding encryption key failed");
+
+		crypto_wipe(key_out, 32);
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	if (do_free) {
+		crypto_wipe((void*)key_str, strlen(key_str));
+		free((void*)key_str);
+	}
+
+	return ret;
+}
