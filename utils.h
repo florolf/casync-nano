@@ -99,6 +99,7 @@ static inline void p32le(uint8_t *data, uint32_t v)
 
 must_check int readall(int fd, uint8_t *buf, size_t len);
 must_check int preadall(int fd, uint8_t *buf, size_t len, off_t offset);
+must_check int writeall(int fd, const uint8_t *buf, size_t len);
 must_check int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset);
 void *slurp_file(const char *path, bool text, off_t *size_out);
 

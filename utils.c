@@ -103,7 +103,31 @@ must_check int preadall(int fd, uint8_t *buf, size_t len, off_t offset)
 	return 0;
 }
 
-int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset)
+must_check int writeall(int fd, const uint8_t *buf, size_t len)
+{
+	size_t written_bytes = 0;
+
+	while (written_bytes < len) {
+		ssize_t ret;
+
+		ret = write(fd, &buf[written_bytes], len - written_bytes);
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+
+			u_log_errno("write failed");
+			return -1;
+		}
+
+		u_assert(ret != 0);
+
+		written_bytes += ret;
+	}
+
+	return 0;
+}
+
+must_check int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset)
 {
 	size_t written_bytes = 0;
 

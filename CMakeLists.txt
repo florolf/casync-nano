@@ -4,6 +4,7 @@ project(csn LANGUAGES C)
 option(BUILD_PATCHDD "build patchdd utility" OFF)
 option(BUILD_CSN_BENCH "build casync-nano benchmarking utility" OFF)
 option(BUILD_CSN "build main casync tool" ON)
+option(BUILD_CSN_TOOL "build csn helper tool" OFF)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 if(POLICY CMP0063)
@@ -85,4 +86,18 @@ if(BUILD_CSN_BENCH)
 	target_include_directories(csn-bench PRIVATE ${CRYPTO_INCLUDE_DIRS})
 
 	install(TARGETS csn-bench RUNTIME DESTINATION bin)
+endif()
+
+if(BUILD_CSN_TOOL)
+	add_executable(csn-tool
+	               log.c
+	               utils.c
+	               csn-tool.c
+	               encrypt.c
+	)
+
+	target_link_libraries(csn-tool ${CRYPTO_LIBRARIES})
+	target_include_directories(csn-tool PRIVATE ${CRYPTO_INCLUDE_DIRS})
+
+	install(TARGETS csn-tool RUNTIME DESTINATION bin)
 endif()
