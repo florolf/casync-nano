@@ -47,6 +47,7 @@ if(BUILD_CSN)
 		target.c
 		ui.c
 		main.c
+		encrypt.c
 	)
 	target_link_libraries(csn ${ZSTD_LIBRARIES} ${CURL_LIBRARIES} ${CRYPTO_LIBRARIES})
 	target_include_directories(csn PRIVATE ${ZSTD_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${CRYPTO_INCLUDE_DIRS})
