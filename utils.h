@@ -81,6 +81,22 @@ static inline uint64_t unp64le(const uint8_t *data) {
 	       ((uint64_t)data[0] <<  0);
 }
 
+static inline uint32_t unp32le(const uint8_t *data)
+{
+	return ((uint32_t)data[3] << 24) |
+	       ((uint32_t)data[2] << 16) |
+	       ((uint32_t)data[1] <<  8) |
+	       ((uint32_t)data[0] <<  0);
+}
+
+static inline void p32le(uint8_t *data, uint32_t v)
+{
+	data[0] = (v >>  0) & 0xff;
+	data[1] = (v >>  8) & 0xff;
+	data[2] = (v >> 16) & 0xff;
+	data[3] = (v >> 24) & 0xff;
+}
+
 must_check int readall(int fd, uint8_t *buf, size_t len);
 must_check int preadall(int fd, uint8_t *buf, size_t len, off_t offset);
 must_check int pwriteall(int fd, const uint8_t *buf, size_t len, off_t offset);
