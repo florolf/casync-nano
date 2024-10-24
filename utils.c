@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -151,6 +152,53 @@ int fd_size(int fd, off_t *size_out)
 	return 0;
 }
 
+void *slurp_file(const char *path, bool text, off_t *size_out)
+{
+	int fd;
+	void *ret = NULL;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		u_log_errno("opening '%s' failed", path);
+		return NULL;
+	}
+
+	off_t size;
+	if (fd_size(fd, &size) < 0) {
+		u_log(ERR, "getting file size of '%s' failed", path);
+		goto out_fd;
+	}
+
+	void *buf;
+	buf = malloc(text ? size + 1 : size);
+	if (!buf) {
+		u_log_errno("could not allocate %zu bytes", (size_t)size);
+		goto out_fd;
+	}
+
+	if (readall(fd, buf, size) < 0) {
+		u_log(ERR, "reading file '%s' failed", path);
+		goto out_buf;
+	}
+
+	if (text)
+		((char*)buf)[size] = 0;
+
+	if (size_out)
+		*size_out = size;
+
+	ret = buf;
+
+out_buf:
+	if (ret == NULL)
+		free(buf);
+
+out_fd:
+	close(fd);
+
+	return ret;
+}
+
 time_t time_monotonic(void)
 {
 	struct timespec ts;
@@ -158,4 +206,59 @@ time_t time_monotonic(void)
 	u_assert_se(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
 
 	return ts.tv_sec;
+}
+
+static int16_t nibble(char c)
+{
+	if ('0' <= c && c <= '9')
+		return c - '0';
+
+	c |= 0x20;
+
+	if ('a' <= c && c <= 'f')
+		return c - 'a' + 10;
+
+	return -1;
+}
+
+int parse_hex(uint8_t *out, const char *in)
+{
+	for (size_t i = 0; in[i]; i++) {
+		int16_t n = nibble(in[i]);
+		if (n < 0) {
+			u_log(ERR, "invalid hex nibble '%c'", in[i]);
+			return -1;
+		}
+
+		if (i % 2 == 0) {
+			*out = (uint8_t)n << 4;
+		} else {
+			*out |= (uint8_t)n;
+			out++;
+		}
+	}
+
+	return 0;
+}
+
+void chomp(char *s)
+{
+	char *p, *q;
+
+	q = NULL;
+	p = s;
+
+	while (*p) {
+		if (*p == '\r' || *p == '\n') {
+			q = p;
+
+			while (*p == '\r' || *p == '\n')
+				p++;
+		} else {
+			p++;
+		}
+	}
+
+	if (q)
+		*q = 0;
 }
