@@ -133,11 +133,11 @@ int main(void)
 	u_log_init();
 
 	int ret;
-	ret = cmocka_run_group_tests_name("openssl", openssl_tests, NULL, NULL);
+	ret = cmocka_run_group_tests_name("sha-openssl", openssl_tests, NULL, NULL);
 	if (ret)
 		return ret;
 
-	ret = cmocka_run_group_tests_name("kcapi", kcapi_tests, NULL, NULL);
+	ret = cmocka_run_group_tests_name("sha-kcapi", kcapi_tests, NULL, NULL);
 	if (ret)
 		return ret;
 }
