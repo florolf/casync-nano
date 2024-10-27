@@ -1,0 +1,92 @@
+name: Tests
+on:
+  push:
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - run: sudo apt-get update -qq
+
+      - run: sudo apt-get install -y
+             libssl-dev
+             libcurl4-openssl-dev
+             libcmocka-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake
+             -B ${{github.workspace}}/build
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build
+
+      - name: Run tests
+        run: CMOCKA_XML_FILE=cm_%g.xml CMOCKA_MESSAGE_OUTPUT=xml ctest --test-dir ${{github.workspace}}/build
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: '${{github.workspace}}/build/test/cm_*.xml'
+
+  end-to-end-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - run: sudo apt-get update -qq
+
+      - run: sudo apt-get install -y
+             libssl-dev
+             libcurl4-openssl-dev
+             python3-pytest
+             casync
+
+      - run: sudo pip3 install pyzstd
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake
+             -D BUILD_TESTING=Off
+             -D CSN_SANITIZE=On
+             -B ${{github.workspace}}/build
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build
+
+      - name: Run tests
+        run: PATH="$PATH:${{github.workspace}}/build" pytest -rP --junitxml=junit.xml
+        working-directory: "${{github.workspace}}/test/e2e"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: "${{github.workspace}}/test/e2e/junit.xml"
+
+
+  results-summary:
+    name: Summarize test results
+    runs-on: ubuntu-24.04
+    needs: [unit-tests, end-to-end-tests]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: ./unit-test-results
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: ./e2e-test-results
+
+      - name: Test summary
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: './*/*.xml'

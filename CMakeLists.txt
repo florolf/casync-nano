@@ -20,6 +20,11 @@ add_compile_options(
 	-Wstrict-prototypes
 )
 
+if(CSN_SANITIZE)
+	add_compile_options(-fsanitize=undefined -fsanitize=address)
+	link_libraries(-fsanitize=address -fsanitize=undefined)
+endif()
+
 if(BUILD_CSN)
 	include(CTest)
 
