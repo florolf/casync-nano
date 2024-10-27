@@ -44,7 +44,7 @@ jobs:
              python3-pytest
              casync
 
-      - run: sudo pip3 install pyzstd
+      - run: sudo pip3 install pyzstd pycryptodome
 
       - uses: actions/checkout@v4
 

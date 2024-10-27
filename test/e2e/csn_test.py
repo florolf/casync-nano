@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import ClassVar, Iterable, List, Self, Dict, Union, Optional
 from collections import defaultdict
 
+from Crypto.Cipher import ChaCha20
+
 class Chunk:
     def __init__(self, data: bytes):
         self.data = data
@@ -52,6 +54,7 @@ class ChunkRequestHandler(BaseHTTPRequestHandler):
     misses: ClassVar[Dict[str, int]] = defaultdict(int)
 
     data: ClassVar[Dict[str, Chunk]] = {}
+    encryption_key: ClassVar[Optional[bytes]] = None
 
     CHUNK_PATH_PATTERN = re.compile(r"/([0-9a-f]{4})/(\1[0-9a-f]{60})\.(.*)")
 
@@ -61,8 +64,12 @@ class ChunkRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
 
+        expected_ext = "cacnk"
+        if self.__class__.encryption_key is not None:
+            expected_ext = "cacnk.enc"
+
         _, cid, ext = m.groups()
-        if cid not in self.__class__.data or ext != "cacnk":
+        if cid not in self.__class__.data or ext != expected_ext:
             self.__class__.misses[cid] +=1
 
             self.send_error(404)
@@ -72,19 +79,36 @@ class ChunkRequestHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(pyzstd.compress(self.__class__.data[cid].data))
+
+        chunk = self.__class__.data[cid]
+
+        data = pyzstd.compress(chunk.data)
+        if self.__class__.encryption_key is not None:
+            cipher = ChaCha20.new(
+                key=self.__class__.encryption_key,
+                nonce=chunk.digest[0:24]
+            )
+
+            data = cipher.encrypt(data)
+
+        self.wfile.write(data)
 
     @classmethod
     def reset(cls):
         cls.misses.clear()
         cls.request_count.clear()
         cls.data = {}
+        cls.encryption_key = None
 
     @classmethod
     def set_data(cls, chunks: Iterable[Chunk]):
         cls.data = {
             chunk.hexdigest: chunk for chunk in chunks
         }
+
+    @classmethod
+    def set_encryption(cls, key: bytes):
+        cls.encryption_key = key
 
 class Target:
     def __init__(self, size: int):
@@ -179,8 +203,9 @@ def chunk_server():
 
     httpd.shutdown()
 
-def run_csn(caibx: Path, target: Target, local_store: Optional[Target] = None,
-            local_index: Optional[Path] = None, http_store: bool = False,
+def run_csn(caibx: Path, target: Target,
+            local_store: Optional[Target] = None, local_index: Optional[Path] = None,
+            http_store: bool = False, http_store_attr: Optional[Dict[str, str]] = None,
             should_fail: bool = False):
 
     cmd = ['csn', str(caibx), str(target.path())]
@@ -191,7 +216,13 @@ def run_csn(caibx: Path, target: Target, local_store: Optional[Target] = None,
             cmd.append(str(local_store.path()))
 
     if http_store:
-        cmd.append('http://127.0.0.1:8080')
+        url = 'http://127.0.0.1:8080'
+        if http_store_attr:
+            url += '#'
+            for k, v in sorted(http_store_attr.items()):
+                url += '%s=%s' % (k, v)
+
+        cmd.append(url)
 
     result = subprocess.run(cmd)
     if should_fail:
@@ -220,6 +251,36 @@ def test_regular(chunk_server):
 
     t = Target(1024*1024)
     run_csn(Path(caibx.name), t, http_store=True)
+    assert t.check_chunks(chunks)
+
+def test_regular_encrypted(chunk_server):
+    """
+    test_regular, but with chunk encryption
+    """
+
+    del chunk_server
+
+    chunks = [
+        Chunk.make(32*1024, start_byte = b'\x01'),
+        Chunk.make(32*1024+1, start_byte = b'\x02'),
+        Chunk.make(256*1024),
+        Chunk.make(32*1024, start_byte = b'\x03'),
+    ]
+
+    key = bytearray()
+    key.extend(range(0, 32))
+    key = bytes(key)
+
+    ChunkRequestHandler.reset()
+    ChunkRequestHandler.set_data(chunks)
+    ChunkRequestHandler.set_encryption(key)
+
+    caibx = make_caibx(chunks)
+
+    t = Target(1024*1024)
+    run_csn(Path(caibx.name), t, http_store=True, http_store_attr={
+        'encrypt': 'key:' + key.hex()
+    })
     assert t.check_chunks(chunks)
 
 def test_resumption(chunk_server):
