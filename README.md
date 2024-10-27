@@ -27,6 +27,10 @@ implementation lacks:
     bit rot)
   * Support for the kernel crypto API to accelerate hashing operations
     using hardware mechanisms that are present on many modern SoCs.
+  * Support for encrypting chunks so that they can be stored on untrusted
+    third-party HTTP infrastructure. (Still considered experimental, but
+    usable/in use already and unlikely to change. See
+    [here](doc/chunk-encryption.md) for more details).
   * Vastly reduced memory usage
 
 ## State
