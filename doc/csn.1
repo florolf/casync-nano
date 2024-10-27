@@ -34,6 +34,9 @@ scheme (see OPERATION and EXAMPLES below).\&
 Support for the kernel crypto API to accelerate hashing operations using
 hardware mechanisms that are present on many modern SoCs.\&
 .IP \(bu 4
+Support for encrypting chunks so that they can be stored on untrusted
+third-party HTTP infrastructure.\&
+.IP \(bu 4
 Vastly reduced memory usage.\&
 .PD
 .PP
@@ -66,6 +69,9 @@ A generic source of chunks.\& This can either be a HTTP(S) URL pointing
 towards a casync-style chunk store or a path to a local file or block device
 that will be broken apart into chunks.\& (See OPERATION below for more details
 on how the synchronization process works).\&
+.PP
+Additional attributes can be set for a HTTP chunk store using URI
+fragments, see HTTP CHUNK STORE ATTRIBUTES below for more details.\&
 .PP
 A local store specification may optionally be followed by a colon and the
 path to a .\&caibx file representing the contents of that local store.\& If
@@ -195,6 +201,36 @@ chunk is reused if it repeats in the .\&caibx file.\& This happens during long r
 of null bytes, for example.\& Benchmarking has shown that this is generally
 sufficient for the intended applications of casync-nano.\&
 .PP
+.SH HTTP CHUNK STORE ATTRIBUTES
+.PP
+To specify additional configuration data for a given HTTP chunk store, URI
+fragments can be used:
+.PP
+.RS 4
+https://example.\&com#key1=value1,key2=value2
+.PP
+.RE
+Currently, the only valid key is \fIencrypt\fR, the value is a string describing
+how to retrieve the encryption key.\& In each case, the 32 byte key is
+represented in hexadecimal.\&
+.PP
+.PD 0
+.IP \(bu 4
+\fIkey:HEXSTRING\fR - supplies the key literally through the command line.\& The
+usual caveats about this making it visible to other processes on the system
+apply.\&
+.IP \(bu 4
+\fIenv:NAME\fR - read the key from the environment variable \fINAME\fR
+.IP \(bu 4
+\fIfile:PATH\fR - read the key from the file at \fIPATH\fR
+.PD
+.PP
+If specified, casync-nano expects to find .\&cacnk.\&enc files encrypted with the
+specified key in the respective store instead of regular .\&cacnk files.\&
+\fIcsn-tool\fR(1) can be used to convert between .\&cacnk and .\&cacnk.\&enc files.\& See
+the chunk encryption design document in the source tree
+(doc/chunk-encryption.\&md) for more details.\&
+.PP
 .SH EXAMPLES
 .PP
 Extract image.\&caibx to /dev/mmcblk0p3, downloading all chunks from example.\&com:
@@ -250,5 +286,7 @@ bug.\&
 .PP
 .SH SEE ALSO
 \fIcasync\fR(1)
+.br
+\fIcsn-tool\fR(1)
 .br
 \fIRAUC\fR (https://rauc.\&io/)
