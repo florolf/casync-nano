@@ -26,7 +26,7 @@ void u_log_init(void)
 	else if (streq(s, "info"))
 		loglevel = U_LOG_INFO;
 	else if (streq(s, "warn") || streq(s, "warning"))
-		loglevel = U_LOG_INFO;
+		loglevel = U_LOG_WARN;
 	else if (streq(s, "err") || streq(s, "error"))
 		loglevel = U_LOG_ERR;
 	else
