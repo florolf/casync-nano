@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 #include "store.h"
 #include "index.h"
@@ -12,6 +13,9 @@ struct target {
 	struct index idx;
 	int fd;
 	bool queryable;
+
+	off_t offset;
+	bool seekable;
 };
 
 struct target *target_new(const char *path);
