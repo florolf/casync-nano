@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 
 	int ret;
 
-	if (isatty(STDOUT_FILENO))
+	if (isatty(STDERR_FILENO))
 		interactive = true;
 
 	time_t now;

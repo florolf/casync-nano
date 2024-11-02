@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 	uint8_t src_buf[TRANSFER_SIZE];
 	uint8_t dst_buf[TRANSFER_SIZE];
 
-	bool print_progress = isatty(STDOUT_FILENO);
+	bool print_progress = isatty(STDERR_FILENO);
 	progess_status_t progess_status = PROGRESS_STATUS_INIT;
 
 	off_t offset = 0;
