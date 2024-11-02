@@ -76,7 +76,15 @@ void _u_log(enum u_loglevel level, const char *path, const char *func, int line,
 		             file, func, line,
 		             format);
 	} else {
-		_ = snprintf(buf, sizeof(buf), "%s:%s:%d %s\n",
+		static const char *level_map[] = {
+			[U_LOG_ERR] = "ERR",
+			[U_LOG_WARN] = "WRN",
+			[U_LOG_INFO] = "INF",
+			[U_LOG_DEBUG] = "DBG"
+		};
+
+		_ = snprintf(buf, sizeof(buf), "%s %s:%s:%d %s\n",
+		             level_map[level],
 		             file, func, line,
 		             format);
 	}
