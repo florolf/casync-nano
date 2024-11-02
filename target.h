@@ -13,6 +13,9 @@ struct target {
 	struct index idx;
 	int fd;
 	bool queryable;
+
+	off_t offset;
+	bool seekable;
 };
 
 struct target *target_new(const char *path);

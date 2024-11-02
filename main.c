@@ -46,7 +46,7 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 			return -1;
 		}
 
-		if (target_check_chunk(target, buf, len, offset, id) == 1) {
+		if (target->seekable && target_check_chunk(target, buf, len, offset, id) == 1) {
 			skipped++;
 			goto progress;
 		}
