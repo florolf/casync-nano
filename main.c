@@ -70,14 +70,26 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 		return -1;
 	}
 
+	static uint32_t handled_entries = 0;
+
 progress:
+	handled_entries++;
+	uint8_t progress = 100 * handled_entries / n_entries;
+
 	// only show progress bar when running interactively and not spamming
 	// debug information anyway
 	if (interactive && !check_loglevel(U_LOG_DEBUG)) {
-		static uint32_t handled_entries = 0;
 		static progess_status_t progress_status = PROGRESS_STATUS_INIT;
 
-		show_progress(100 * ++handled_entries / n_entries, &progress_status);
+		show_progress(progress, &progress_status);
+	} else {
+		static time_t last_progress = 0;
+
+		time_t now = time_monotonic();
+		if (now >= last_progress + 5 || progress == 100) {
+			u_log(INFO, "synchronization progress: %"PRIu8"%%", progress);
+			last_progress = now;
+		}
 	}
 
 	return 0;
