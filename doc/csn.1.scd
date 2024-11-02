@@ -22,6 +22,8 @@ intended application compared to the original casync tool:
   scheme (see OPERATION and EXAMPLES below).
 - Support for the kernel crypto API to accelerate hashing operations using
   hardware mechanisms that are present on many modern SoCs.
+- Support for encrypting chunks so that they can be stored on untrusted
+  third-party HTTP infrastructure.
 - Vastly reduced memory usage.
 
 casync-nano is a multi-call binary and provides a compatibility layer that
@@ -48,6 +50,9 @@ _STORE_
 	towards a casync-style chunk store or a path to a local file or block device
 	that will be broken apart into chunks. (See OPERATION below for more details
 	on how the synchronization process works).
+
+	Additional attributes can be set for a HTTP chunk store using URI
+	fragments, see HTTP CHUNK STORE ATTRIBUTES below for more details.
 
 	A local store specification may optionally be followed by a colon and the
 	path to a .caibx file representing the contents of that local store. If
@@ -166,6 +171,29 @@ chunk is reused if it repeats in the .caibx file. This happens during long runs
 of null bytes, for example. Benchmarking has shown that this is generally
 sufficient for the intended applications of casync-nano.
 
+# HTTP CHUNK STORE ATTRIBUTES
+
+To specify additional configuration data for a given HTTP chunk store, URI
+fragments can be used:
+
+	https://example.com#key1=value1,key2=value2
+
+Currently, the only valid key is _encrypt_, the value is a string describing
+how to retrieve the encryption key. In each case, the 32 byte key is
+represented in hexadecimal.
+
+- _key:HEXSTRING_ - supplies the key literally through the command line. The
+  usual caveats about this making it visible to other processes on the system
+  apply.
+- _env:NAME_ - read the key from the environment variable _NAME_
+- _file:PATH_ - read the key from the file at _PATH_
+
+If specified, casync-nano expects to find .cacnk.enc files encrypted with the
+specified key in the respective store instead of regular .cacnk files.
+_csn-tool_(1) can be used to convert between .cacnk and .cacnk.enc files. See
+the chunk encryption design document in the source tree
+(doc/chunk-encryption.md) for more details.
+
 # EXAMPLES
 
 Extract image.caibx to /dev/mmcblk0p3, downloading all chunks from example.com:
@@ -213,4 +241,5 @@ bug.
 
 # SEE ALSO
 _casync_(1)++
+_csn-tool_(1)++
 _RAUC_ (https://rauc.io/)

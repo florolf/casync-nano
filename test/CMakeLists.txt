@@ -28,3 +28,8 @@ add_executable(sha_test sha_test.c xorshift32.c ../sha.c ../log.c ../utils.c)
 target_include_directories(sha_test PRIVATE ${PROJECT_SOURCE_DIR} ${CURRENT_SOURCE_DIR} ${CMOCKA_INCLUDES})
 target_link_libraries(sha_test PRIVATE ${CMOCKA_LIBRARIES} ${CRYPTO_LIBRARIES})
 add_test(sha_test sha_test)
+
+add_executable(encrypt_test encrypt_test.c ../encrypt.c ../log.c ../utils.c)
+target_include_directories(encrypt_test PRIVATE ${PROJECT_SOURCE_DIR} ${CURRENT_SOURCE_DIR} ${CMOCKA_INCLUDES})
+target_link_libraries(encrypt_test PRIVATE ${CMOCKA_LIBRARIES} ${CRYPTO_LIBRARIES})
+add_test(encrypt_test encrypt_test)

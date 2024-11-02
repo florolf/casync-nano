@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "chunker.h"
 #include "chunk.h"
+#include "encrypt.h"
 
 #include "store-http.h"
 
@@ -28,6 +29,9 @@ struct store_http {
 	size_t decode_buffer_size, decode_buffer_fill;
 
 	unsigned int error_count;
+
+	bool encrypted;
+	struct encrypt_ctx encrypt_ctx;
 };
 
 #define curl_checked_setopt(curl, opt, val, err) do { \
@@ -81,7 +85,17 @@ static int decode_buffer_absorb(struct store_http *hs, uint8_t *data, size_t len
 		hs->decode_buffer_size = new_size;
 	}
 
-	memcpy(&hs->decode_buffer[hs->decode_buffer_fill], data, len);
+	if (hs->encrypted) {
+		if (encrypt_do(&hs->encrypt_ctx,
+		               &hs->decode_buffer[hs->decode_buffer_fill],
+		               data, len) < 0) {
+			u_log(ERR, "decryption failed");
+			return -1;
+		}
+	} else {
+		memcpy(&hs->decode_buffer[hs->decode_buffer_fill], data, len);
+	}
+
 	hs->decode_buffer_fill += len;
 
 	return 0;
@@ -163,7 +177,7 @@ static size_t store_http_data_cb(char *ptr, size_t size, size_t nmemb, void *use
 		return 0;
 
 	ssize_t ret;
-	if (ctx->hs->decode_buffer_fill) {
+	if (ctx->hs->decode_buffer_fill || ctx->hs->encrypted) {
 		if (decode_buffer_absorb(ctx->hs, (uint8_t*)ptr, nmemb) < 0)
 			goto fail;
 
@@ -202,6 +216,9 @@ static int set_url(struct store_http *hs, uint8_t *id)
 
 	chunk_format_id(&hs->url_buf[ret], id);
 	strncat(hs->url_buf, ".cacnk", 7);
+
+	if (hs->encrypted)
+		strncat(hs->url_buf, ".enc", 5);
 
 	curl_checked_setopt(hs->curl, CURLOPT_URL, hs->url_buf, return -1);
 
@@ -264,6 +281,14 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	if (set_url(hs, id) < 0) {
 		u_log(ERR, "setting request URL failed");
 		return -1;
+	}
+
+	if (hs->encrypted) {
+		// uses the first 24 bytes of the id as the nonce
+		if (encrypt_restart(&hs->encrypt_ctx, id) < 0) {
+			u_log(ERR, "failed to re-initialize encryption");
+			return -1;
+		}
 	}
 
 	struct http_request_ctx ctx = {
@@ -362,10 +387,51 @@ static void store_http_free(struct store *s)
 	ZSTD_freeDStream(hs->zstd);
 	curl_easy_cleanup(hs->curl);
 
+	if (hs->encrypted)
+		encrypt_close(&hs->encrypt_ctx);
+
 	free(hs);
 }
 
-#define CHUNK_SUFFIX_LEN (strlen("/8a39/8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90.cacnk"))
+static int store_handle_params(struct store_http *hs, char *args)
+{
+	char *p = args;
+
+	while (*p) {
+		char *next;
+		next = strchr(p, ',');
+
+		if (next)
+			*next = 0;
+
+		if (startswith(p, "encrypt=")) {
+			uint8_t key[32];
+			if (encrypt_parse_keyspec(key, p+strlen("encrypt=")) < 0) {
+				u_log(ERR, "parsing encryption config failed");
+				return -1;
+			}
+
+			if (encrypt_init(&hs->encrypt_ctx, key) < 0) {
+				u_log(ERR, "failed to initialize encryption context");
+				return -1;
+			}
+
+			hs->encrypted = true;
+		} else {
+			u_log(ERR, "unhandled store parameters: %s", p);
+			return -1;
+		}
+
+		if (next)
+			p = next+1;
+		else
+			break;
+	}
+
+	return 0;
+}
+
+#define CHUNK_SUFFIX_MAX_LEN (strlen("/8a39/8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90.cacnk.enc"))
 
 struct store *store_http_new(const char *baseurl)
 {
@@ -384,12 +450,24 @@ struct store *store_http_new(const char *baseurl)
 	u_notnull(tmp, goto err_hs);
 
 	char *p;
+	p = strrchr(tmp, '#');
+	if (p) {
+		if (store_handle_params(hs, p+1) < 0) {
+			u_log(ERR, "failed to parse store parameters");
+			free(tmp);
+
+			goto err_hs;
+		}
+
+		*p = 0;
+	}
+
 	if ((p = strrchr(tmp, '/')) && *(p+1) == 0)
 		*p = 0;
 
 	hs->baseurl = tmp;
 
-	hs->url_buf = malloc(strlen(hs->baseurl) + CHUNK_SUFFIX_LEN + 1);
+	hs->url_buf = malloc(strlen(hs->baseurl) + CHUNK_SUFFIX_MAX_LEN + 1);
 	u_notnull(hs->url_buf, goto err_baseurl);
 
 	snprintf(hs->s.name, sizeof(hs->s.name), "%s", baseurl);
