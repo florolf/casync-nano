@@ -21,10 +21,10 @@ void show_progress(uint8_t percent, progess_status_t *status)
 
 	bar[PROGRESS_BAR_LEN] = 0;
 
-	printf("\033[0G[%c] |%s| %3d%%", spinner[(*status)++ % strlen(spinner)], bar, percent);
+	fprintf(stderr, "\033[0G[%c] |%s| %3d%%", spinner[(*status)++ % strlen(spinner)], bar, percent);
 
 	if (percent == 100)
-		putchar('\n');
+		fputc('\n', stderr);
 
-	fflush(stdout);
+	fflush(stderr);
 }
