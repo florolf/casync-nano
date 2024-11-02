@@ -29,6 +29,11 @@ int target_check_chunk(struct target *t, uint8_t *tmp, size_t len, off_t offset,
 {
 	uint8_t calculated_id[CHUNK_ID_LEN];
 
+	if (!t->seekable) {
+		u_log(WARN, "cannot check non-seekable target");
+		return -1;
+	}
+
 	if (preadall(t->fd, tmp, len, offset) < 0) {
 		u_log(WARN, "reading chunk failed");
 		return -1;
@@ -76,13 +81,30 @@ int target_write(struct target *t, const uint8_t *data, size_t len, off_t offset
 	u_assert(id);
 
 	int ret;
-	ret = pwriteall(t->fd, data, len, offset);
-	if (ret < 0) {
-		u_log_errno("writing %zu bytes to target failed", len);
-		return -1;
-	}
+	if (t->seekable) {
+		ret = pwriteall(t->fd, data, len, offset);
+		if (ret < 0) {
+			u_log_errno("writing %zu bytes to target failed", len);
+			return -1;
+		}
 
-	target_add_chunk(t, len, offset, id);
+		target_add_chunk(t, len, offset, id);
+	} else {
+		if (offset != t->offset) {
+			u_log(ERR, "tried to write to offset %llu in non-seekable target currently at offset %llu",
+					(unsigned long long)offset,
+					(unsigned long long)t->offset);
+			return -1;
+		}
+
+		ret = writeall(t->fd, data, len);
+		if (ret < 0) {
+			u_log_errno("writing %zu bytes to target failed", len);
+			return -1;
+		}
+
+		t->offset += len;
+	}
 
 	return 0;
 }
@@ -100,6 +122,11 @@ struct target *target_new(const char *path)
 		u_log_errno("opening target '%s' failed", path);
 		goto err_target;
 	}
+
+	t->seekable = true;
+	t->offset = 0;
+	if (lseek(t->fd, t->offset, SEEK_SET) < 0)
+		t->seekable = false;
 
 	snprintf(t->s.name, sizeof(t->s.name), "target:%s", path);
 	t->s.get_chunk = target_get_chunk;
@@ -124,6 +151,11 @@ struct store *target_as_store(struct target *t, size_t chunk_estimate)
 {
 	if (t->queryable)
 		return &t->s;
+
+	if (!t->seekable) {
+		u_log(WARN, "cannot use non-seekable target as store");
+		return NULL;
+	}
 
 	u_log(DEBUG, "initializing index with an estimated %zu chunks", chunk_estimate);
 	if (index_init(&t->idx, chunk_estimate) < 0) {
