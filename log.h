@@ -24,5 +24,3 @@ void _u_log(enum u_loglevel level, const char *path, const char *func, int line,
 } while (0)
 
 bool check_loglevel(enum u_loglevel level);
-
-void hexdump(void *addr, size_t len);
