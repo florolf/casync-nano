@@ -117,10 +117,14 @@ struct target *target_new(const char *path)
 	t = calloc(1, sizeof(*t));
 	u_notnull(t, return NULL);
 
-	t->fd = open(path, O_RDWR);
-	if (t->fd < 0) {
-		u_log_errno("opening target '%s' failed", path);
-		goto err_target;
+	if (streq(path, "-")) {
+		t->fd = STDOUT_FILENO;
+	} else {
+		t->fd = open(path, O_RDWR);
+		if (t->fd < 0) {
+			u_log_errno("opening target '%s' failed", path);
+			goto err_target;
+		}
 	}
 
 	t->seekable = true;
