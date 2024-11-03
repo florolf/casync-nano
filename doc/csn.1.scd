@@ -38,12 +38,17 @@ _INDEX_
 
 _TARGET_
 	Specifies where the extracted image will be written to. This will normally
-	be a block device. casync-nano currently does not support writing to MTD
-	devices.
+	be a block device. casync-nano can write to non-readable/non-seekable
+	targets (such as an UBI volume after UBI_IOCVOLUP has been called) but in
+	those cases, the target cannot be used as a store and casync-nano also
+	cannot resume a previous partial update and will start from the beginning.
 
 	As a safety mechanism, casync-nano will refuse to create _TARGET_ when it
 	does not exist. To extract an image to a regular file, create an empty file
 	first.
+
+	Using "-" as the target will cause casync-nano to write the image to
+	standard out.
 
 _STORE_
 	A generic source of chunks. This can either be a HTTP(S) URL pointing

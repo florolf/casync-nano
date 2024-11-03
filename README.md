@@ -33,13 +33,6 @@ implementation lacks:
     [here](doc/chunk-encryption.md) for more details).
   * Vastly reduced memory usage
 
-## State
-
-casync-nano is stable and is actively being used in the field.
-
-Currently, casync-nano only supports reading from and writing to block devices
-(such as eMMC storage).
-
 ## Dependencies
   * libcurl
   * openssl
