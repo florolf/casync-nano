@@ -22,8 +22,8 @@ add_compile_options(
 )
 
 if(CSN_SANITIZE)
-	add_compile_options(-fsanitize=undefined -fsanitize=address)
-	link_libraries(-fsanitize=address -fsanitize=undefined)
+	add_compile_options(-fsanitize=undefined -fsanitize=address -fsanitize=leak)
+	link_libraries(-fsanitize=address -fsanitize=undefined -fsanitize=leak)
 endif()
 
 if(BUILD_CSN)
