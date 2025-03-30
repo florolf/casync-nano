@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/types.h>
 
 #include "encrypt.h"
 #include "chunk.h"
