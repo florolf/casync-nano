@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0...3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1.0...3.10 FATAL_ERROR)
 project(csn LANGUAGES C)
 
 option(BUILD_PATCHDD "build patchdd utility" OFF)
