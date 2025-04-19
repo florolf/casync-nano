@@ -63,10 +63,10 @@ endif()
 
 if(BUILD_PATCHDD)
 	add_executable(patchdd
-	               log.c
-	               utils.c
-	               ui.c
-	               patchdd.c
+		log.c
+		utils.c
+		ui.c
+		patchdd.c
 	)
 
 	install(TARGETS patchdd RUNTIME DESTINATION bin)
@@ -74,12 +74,12 @@ endif()
 
 if(BUILD_CSN_BENCH)
 	add_executable(csn-bench
-	               log.c
-	               utils.c
-	               sha.c
-		       chunker.c
-	               test/xorshift32.c
-	               csn-bench.c
+		log.c
+		utils.c
+		sha.c
+		chunker.c
+		test/xorshift32.c
+		csn-bench.c
 	)
 
 	target_link_libraries(csn-bench ${CRYPTO_LIBRARIES})
@@ -90,10 +90,10 @@ endif()
 
 if(BUILD_CSN_TOOL)
 	add_executable(csn-tool
-	               log.c
-	               utils.c
-	               csn-tool.c
-	               encrypt.c
+		log.c
+		utils.c
+		csn-tool.c
+		encrypt.c
 	)
 
 	target_link_libraries(csn-tool ${CRYPTO_LIBRARIES})
