@@ -26,10 +26,11 @@ if(CSN_SANITIZE)
 	link_libraries(-fsanitize=address -fsanitize=undefined -fsanitize=leak)
 endif()
 
+find_package(PkgConfig REQUIRED)
+
 if(BUILD_CSN)
 	include(CTest)
 
-	find_package(PkgConfig REQUIRED)
 	pkg_search_module(ZSTD REQUIRED libzstd)
 	pkg_search_module(CURL REQUIRED libcurl)
 	pkg_search_module(CRYPTO REQUIRED libcrypto)
@@ -73,6 +74,8 @@ if(BUILD_PATCHDD)
 endif()
 
 if(BUILD_CSN_BENCH)
+	pkg_search_module(CRYPTO REQUIRED libcrypto)
+
 	add_executable(csn-bench
 		log.c
 		utils.c
@@ -89,6 +92,8 @@ if(BUILD_CSN_BENCH)
 endif()
 
 if(BUILD_CSN_TOOL)
+	pkg_search_module(CRYPTO REQUIRED libcrypto)
+
 	add_executable(csn-tool
 		log.c
 		utils.c
