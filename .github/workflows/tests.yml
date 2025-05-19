@@ -41,10 +41,13 @@ jobs:
       - run: sudo apt-get install -y
              libssl-dev
              libcurl4-openssl-dev
-             python3-pytest
              casync
 
-      - run: sudo pip3 install pyzstd pycryptodome
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - run: pip install pyzstd pycryptodome pytest
 
       - uses: actions/checkout@v4
 
