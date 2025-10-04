@@ -316,7 +316,9 @@ static ssize_t store_http_get_chunk(struct store *s, uint8_t *id, uint8_t *out, 
 	 * We'll handle this below.
 	 */
 	if (curl_ret != CURLE_OK && curl_ret != CURLE_WRITE_ERROR) {
-		u_log(ERR, "curl_easy_perform failed: %s", hs->curl_err_buf);
+		u_log(ERR, "curl_easy_perform failed: %s%s%s",
+		      curl_easy_strerror(curl_ret),
+		      hs->curl_err_buf[0] ? ": " : "", hs->curl_err_buf);
 		return -1;
 	}
 
