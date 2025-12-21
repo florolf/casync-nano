@@ -253,6 +253,31 @@ def test_regular(chunk_server):
     run_csn(Path(caibx.name), t, http_store=True)
     assert t.check_chunks(chunks)
 
+def test_regular_pipe(chunk_server):
+    """
+    same as test_regular() but writing to a pipe
+    """
+
+    del chunk_server
+
+    chunks = [
+        Chunk.make(32*1024, start_byte = b'\x01'),
+        Chunk.make(32*1024+1, start_byte = b'\x02'),
+        Chunk.make(256*1024),
+        Chunk.make(32*1024, start_byte = b'\x03'),
+    ]
+
+    ChunkRequestHandler.reset()
+    ChunkRequestHandler.set_data(chunks)
+
+    caibx = make_caibx(chunks)
+
+    result = subprocess.run(['csn', caibx.name, '-', 'http://127.0.0.1:8080'], stdout=subprocess.PIPE)
+    assert result.returncode == 0
+
+    chunk_data = b''.join([chunk.data for chunk in chunks])
+    assert result.stdout == chunk_data
+
 def test_regular_encrypted(chunk_server):
     """
     test_regular, but with chunk encryption
