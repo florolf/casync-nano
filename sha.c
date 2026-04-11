@@ -84,6 +84,9 @@ int sha_once(const uint8_t *data, size_t len, uint8_t *out)
 	if (kcapi_fd < 0)
 		return (SHA256(data, len, out) != NULL) ? 0 : -1;
 
+	const uint8_t *data_orig = data;
+	size_t len_orig = len;
+
 	while (len) {
 		ssize_t ret;
 
@@ -121,5 +124,5 @@ disable:
 	sha_kcapi_deinit();
 
 	// fall back to openssl
-	return (SHA256(data, len, out) != NULL) ? 0 : -1;
+	return (SHA256(data_orig, len_orig, out) != NULL) ? 0 : -1;
 }
