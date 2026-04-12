@@ -15,7 +15,7 @@ jobs:
              libssl-dev
              libcurl4-openssl-dev
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - run: cmake
              -DBUILD_TESTING=Off

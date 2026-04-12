@@ -14,7 +14,7 @@ jobs:
              libcurl4-openssl-dev
              libcmocka-dev
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Configure
         run: cmake
@@ -26,7 +26,7 @@ jobs:
       - name: Run tests
         run: CMOCKA_XML_FILE=cm_%g.xml CMOCKA_MESSAGE_OUTPUT=xml ctest --test-dir ${{github.workspace}}/build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: unit-test-results
@@ -43,13 +43,13 @@ jobs:
              libcurl4-openssl-dev
              casync
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: '3.13'
 
       - run: pip install pyzstd pycryptodome pytest
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Configure
         run: cmake
@@ -64,7 +64,7 @@ jobs:
         run: PATH="$PATH:${{github.workspace}}/build" pytest -rP --junitxml=junit.xml
         working-directory: "${{github.workspace}}/test/e2e"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: e2e-test-results
@@ -77,19 +77,19 @@ jobs:
     needs: [unit-tests, end-to-end-tests]
     if: ${{ always() }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: unit-test-results
           path: ./unit-test-results
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: e2e-test-results
           path: ./e2e-test-results
 
       - name: Test summary
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v6.4.0
         with:
           report_paths: './*/*.xml'
