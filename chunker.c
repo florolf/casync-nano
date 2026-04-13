@@ -105,7 +105,7 @@ void chunker_reset(struct chunker *c)
 	c->chunk_size = 0;
 	c->window_fill = 0;
 
-	SHA256_Init(&c->sha_ctx);
+	EVP_DigestInit_ex(c->sha_ctx, EVP_sha256(), NULL);
 }
 
 #define CA_CHUNKER_DISCRIMINATOR_FROM_AVG(avg) ((size_t) (avg / (-1.42888852e-7 * avg + 1.33237515)))
@@ -119,9 +119,19 @@ int chunker_init(struct chunker *c, struct chunker_params *params)
 	u_build_assert(CA_CHUNKER_DISCRIMINATOR_FROM_AVG(64 * 1024) == 0xc17f);
 	c->discriminator = CA_CHUNKER_DISCRIMINATOR_FROM_AVG(c->params.avg_size);
 
+	c->sha_ctx = EVP_MD_CTX_new();
+	if (!c->sha_ctx)
+		return -1;
+
 	chunker_reset(c);
 
 	return 0;
+}
+
+void chunker_deinit(struct chunker *c)
+{
+	EVP_MD_CTX_free(c->sha_ctx);
+	c->sha_ctx = NULL;
 }
 
 static bool chunker_shall_break(struct chunker *c)
@@ -155,7 +165,7 @@ size_t chunker_scan(struct chunker *c, uint8_t *buf, size_t len)
 
 		to_copy = MIN(len, CHUNKER_WINDOW_SIZE - c->window_fill);
 		memcpy(&c->window[c->window_fill], buf, to_copy);
-		SHA256_Update(&c->sha_ctx, buf, to_copy);
+		EVP_DigestUpdate(c->sha_ctx, buf, to_copy);
 
 		c->window_fill += to_copy;
 		c->chunk_size += to_copy;
@@ -195,12 +205,12 @@ size_t chunker_scan(struct chunker *c, uint8_t *buf, size_t len)
 		len--;
 
 		if (chunker_shall_break(c)) {
-			SHA256_Update(&c->sha_ctx, buf, (size_t)(p - buf));
+			EVP_DigestUpdate(c->sha_ctx, buf, (size_t)(p - buf));
 			return consumed;
 		}
 	}
 
-	SHA256_Update(&c->sha_ctx, buf, (size_t)(p - buf));
+	EVP_DigestUpdate(c->sha_ctx, buf, (size_t)(p - buf));
 
 	return (size_t)-1;
 }
@@ -210,7 +220,7 @@ void chunker_get_id(struct chunker *c, uint8_t *id_out)
 	u_assert(c);
 	u_assert(id_out);
 
-	SHA256_Final(id_out, &c->sha_ctx);
+	EVP_DigestFinal_ex(c->sha_ctx, id_out, NULL);
 }
 
 int chunker_scan_fd(int fd, struct chunker_params *params,
@@ -230,7 +240,9 @@ int chunker_scan_fd(int fd, struct chunker_params *params,
 	uint64_t offset = 0;
 	uint64_t last_boundary = 0;
 
-	checked(lseek(fd, 0, SEEK_SET), return -1);
+	int ret = -1;
+
+	checked(lseek(fd, 0, SEEK_SET), goto out);
 
 	uint8_t chunk_id[CHUNK_ID_LEN];
 	while (1) {
@@ -242,7 +254,7 @@ int chunker_scan_fd(int fd, struct chunker_params *params,
 				continue;
 
 			u_log_errno("error at offset %"PRIu64" while chunking", offset);
-			return -1;
+			goto out;
 		} else if (bytes_read == 0)
 			break;
 
@@ -261,7 +273,7 @@ int chunker_scan_fd(int fd, struct chunker_params *params,
 
 			chunker_get_id(&c, chunk_id);
 			if (cb(last_boundary, offset - last_boundary, chunk_id, arg) < 0)
-				return -1;
+				goto out;
 
 			last_boundary = offset;
 
@@ -275,8 +287,11 @@ int chunker_scan_fd(int fd, struct chunker_params *params,
 	if (offset != last_boundary) {
 		chunker_get_id(&c, chunk_id);
 		if (cb(last_boundary, offset - last_boundary, chunk_id, arg) < 0)
-			return -1;
+			goto out;
 	}
 
-	return 0;
+	ret = 0;
+out:
+	chunker_deinit(&c);
+	return ret;
 }

@@ -29,6 +29,7 @@ static int create_chunker(void **state)
 
 static int destroy_chunker(void **state)
 {
+	chunker_deinit((struct chunker*)*state);
 	test_free(*state);
 	return 0;
 }

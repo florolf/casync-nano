@@ -126,6 +126,8 @@ static int bench_chunker(int argc, char **argv)
 			break;
 	}
 
+	chunker_deinit(&c);
+
 	uint64_t delta = time_delta_ms(&start, &end);
 	double rate = (double)count * buf_sz / (delta / 1000.0) / 1024.0 / 1024.0;
 	printf("%zu iterations in %"PRIu64" ms -> %.2f MiB/s\n", count, delta, rate);

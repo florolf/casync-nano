@@ -7,10 +7,12 @@
 #include <linux/if_alg.h>
 #include <errno.h>
 
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include "utils.h"
 
 #include "sha.h"
+
+static EVP_MD_CTX *evp_ctx;
 
 #ifndef AF_ALG
 #define AF_ALG 38
@@ -70,8 +72,13 @@ err_algfd:
 	return -1;
 }
 
-void sha_kcapi_deinit(void)
+void sha_deinit(void)
 {
+	if (evp_ctx) {
+		EVP_MD_CTX_free(evp_ctx);
+		evp_ctx = NULL;
+	}
+
 	if (kcapi_fd < 0)
 		return;
 
@@ -79,10 +86,26 @@ void sha_kcapi_deinit(void)
 	kcapi_fd = -1;
 }
 
+static int sha_openssl(const uint8_t *data, size_t len, uint8_t *out)
+{
+	if (!evp_ctx) {
+		evp_ctx = EVP_MD_CTX_new();
+		if (!evp_ctx)
+			return -1;
+	}
+
+	if (!EVP_DigestInit_ex(evp_ctx, EVP_sha256(), NULL) ||
+	    !EVP_DigestUpdate(evp_ctx, data, len) ||
+	    !EVP_DigestFinal_ex(evp_ctx, out, NULL))
+		return -1;
+
+	return 0;
+}
+
 int sha_once(const uint8_t *data, size_t len, uint8_t *out)
 {
 	if (kcapi_fd < 0)
-		return (SHA256(data, len, out) != NULL) ? 0 : -1;
+		return sha_openssl(data, len, out);
 
 	const uint8_t *data_orig = data;
 	size_t len_orig = len;
@@ -121,8 +144,8 @@ retry:
 
 disable:
 	u_log(ERR, "kcapi operation failed, disabling");
-	sha_kcapi_deinit();
+	sha_deinit();
 
 	// fall back to openssl
-	return (SHA256(data_orig, len_orig, out) != NULL) ? 0 : -1;
+	return sha_openssl(data_orig, len_orig, out);
 }

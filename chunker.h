@@ -5,7 +5,7 @@
 
 #include "chunk.h"
 
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 #define CHUNKER_SIZE_AVG_DEFAULT ((size_t) (64U*1024U))
 #define CHUNKER_WINDOW_SIZE 48
@@ -24,12 +24,13 @@ struct chunker {
 	size_t window_fill;
 	uint8_t window[CHUNKER_WINDOW_SIZE];
 
-	SHA256_CTX sha_ctx;
+	EVP_MD_CTX *sha_ctx;
 };
 
 int chunker_params_set(struct chunker_params *params, uint64_t min_size, uint64_t avg_size, uint64_t max_size);
 
 int chunker_init(struct chunker *c, struct chunker_params *params);
+void chunker_deinit(struct chunker *c);
 size_t chunker_scan(struct chunker *c, uint8_t *buf, size_t len);
 void chunker_reset(struct chunker *c);
 void chunker_get_id(struct chunker *c, uint8_t *id_out);

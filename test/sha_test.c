@@ -23,7 +23,7 @@ static int kcapi_destroy(void **state)
 {
 	(void) state;
 
-	sha_kcapi_deinit();
+	sha_deinit();
 
 	return 0;
 }
