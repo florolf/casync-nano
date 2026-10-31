@@ -34,18 +34,16 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 	static bool have_last_id = false;
 	static bool resuming = true;
 	static uint8_t last_id[CHUNK_ID_LEN];
+	static uint32_t last_len;
 	static uint8_t buf[256*1024] __attribute__((aligned(4096)));
 
+	if (len > sizeof(buf)) {
+		u_log(ERR, "chunk length (%"PRIu32") at offset %"PRIu64" exceeds buffer size (%zu)",
+		      len, offset, sizeof(buf));
+		return -1;
+	}
+
 	if (resuming) {
-		if (len > sizeof(buf)) {
-			u_log(ERR, "chunk length (%"PRIu32") at offset %"PRIu64" exceeds buffer size (%zu)",
-			      len, offset, sizeof(buf));
-
-			// this means the index file is incompatible and store_get_chunk
-			// would bail out anyway, abort.
-			return -1;
-		}
-
 		if (target_check_chunk(target, buf, len, offset, id) == 1) {
 			skipped++;
 			goto progress;
@@ -54,7 +52,13 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 		resuming = false;
 	}
 
-	if (!have_last_id || memcmp(last_id, id, CHUNK_ID_LEN) != 0) {
+	if (have_last_id && memcmp(last_id, id, CHUNK_ID_LEN) == 0) {
+		if (len != last_len) {
+			u_log(ERR, "repeated chunk with different length (was %"PRIu32", is %"PRIu32") at offset %"PRIu64,
+			      last_len, len, offset);
+			return -1;
+		}
+	} else {
 		ssize_t ret = store_get_chunk(store, id, buf, sizeof(buf));
 		if (ret < 0 || len != (size_t)ret) {
 			u_log(ERR, "result size %zd does not match expected length %"PRIu32, ret, len);
@@ -62,6 +66,7 @@ static int entry_cb(uint64_t offset, uint32_t len, uint8_t *id, void *arg)
 		}
 
 		memcpy(last_id, id, CHUNK_ID_LEN);
+		last_len = len;
 		have_last_id = true;
 	}
 
