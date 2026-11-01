@@ -9,7 +9,7 @@ import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 from pathlib import Path
-from typing import ClassVar, Iterable, List, Self, Dict, Union, Optional
+from typing import ClassVar, Iterable, List, Self, Dict, Tuple, Union, Optional
 from collections import defaultdict
 
 from Crypto.Cipher import ChaCha20
@@ -126,6 +126,10 @@ class Target:
     def path(self) -> Path:
         return Path(self.f.name)
 
+    def read(self, size: int, pos: int = 0) -> bytes:
+        self.f.seek(pos)
+        return self.f.read(size)
+
     def write_chunks(self, chunks: List[Chunk]):
         self.f.seek(0)
         for chunk in chunks:
@@ -149,7 +153,7 @@ class Target:
 
         return True
 
-def make_caibx(chunks: List[Chunk]) -> tempfile.NamedTemporaryFile:
+def make_caibx_from_entries(entries: List[Tuple[int, bytes]]) -> tempfile.NamedTemporaryFile:
     f = tempfile.NamedTemporaryFile(mode='wb+', suffix='.caibx')
 
     words: List[Union[int, bytes]] = []
@@ -168,17 +172,15 @@ def make_caibx(chunks: List[Chunk]) -> tempfile.NamedTemporaryFile:
         0xe75b9e112f17417d, # magic
     ])
 
-    offset = 0
-    for chunk in chunks:
-        offset += len(chunk.data)
+    for offset, digest in entries:
         words.append(offset)
-        words.append(chunk.digest)
+        words.append(digest)
 
     # footer
     words.extend([
         0, 0,
         0x30, # table offset
-        16 + (len(chunks)+1) * 40,
+        16 + (len(entries)+1) * 40,
         0x4b4f050e5549ecd1 # end marker
     ])
 
@@ -191,6 +193,16 @@ def make_caibx(chunks: List[Chunk]) -> tempfile.NamedTemporaryFile:
     f.flush()
 
     return f
+
+def make_caibx(chunks: List[Chunk]) -> tempfile.NamedTemporaryFile:
+    offset = 0
+    entries = []
+
+    for chunk in chunks:
+        offset += len(chunk.data)
+        entries.append((offset, chunk.digest))
+
+    return make_caibx_from_entries(entries)
 
 @pytest.fixture(scope='module')
 def chunk_server():
@@ -336,6 +348,37 @@ def test_no_repeated_fetch(chunk_server):
     assert t.check_chunks(chunks)
 
     assert ChunkRequestHandler.request_count[duplicate.hexdigest] == 1
+
+@pytest.mark.parametrize('repeated_len', [
+    16*1024,          # shorter than the cached chunk
+    256*1024 + 1,     # larger than the chunk buffer
+])
+def test_repeated_chunk_inconsistent_length(chunk_server, repeated_len):
+    """
+    A malformed index that repeats a chunk ID with a different length must be
+    rejected instead of reusing the cached chunk. In particular, a length
+    larger than the chunk buffer used to cause an out-of-bounds read.
+    """
+
+    del chunk_server
+
+    chunk = Chunk.make(32*1024, start_byte = b'\x01')
+
+    ChunkRequestHandler.reset()
+    ChunkRequestHandler.set_data([chunk])
+
+    caibx = make_caibx_from_entries([
+        (len(chunk.data), chunk.digest),
+        (len(chunk.data) + repeated_len, chunk.digest),
+    ])
+
+    t = Target(1024*1024)
+    run_csn(Path(caibx.name), t, http_store=True, should_fail=True)
+
+    # Only the first, well-formed entry may have been written.
+    assert t.check_chunks([chunk])
+    assert t.read(t.size - len(chunk.data), len(chunk.data)) == \
+        b'\x00' * (t.size - len(chunk.data))
 
 def test_target_as_source(chunk_server):
     """
